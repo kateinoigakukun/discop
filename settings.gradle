@@ -8,4 +8,4 @@
  */
 
 rootProject.name = 'discop'
-include('app', 'list', 'utilities')
+include('discop-cli', 'discop-core', 'discop-worker')
