@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+option java_package = "discop.protobuf.msg";
+
+
+message Ping {
+    string foo = 1;
+}
+message Pong {}
