@@ -1,14 +1,6 @@
-buildscript {
-    repositories {
-        mavenCentral()
-    }
-    dependencies {
-        classpath 'com.google.protobuf:protobuf-gradle-plugin:0.8.16'
-    }
-}
-
 plugins {
     id 'discop.java-application-conventions'
+    id 'com.github.johnrengelman.shadow' version '6.1.0'
     id 'com.google.protobuf' version '0.8.15'
 }
 
@@ -18,9 +10,7 @@ dependencies {
     implementation project(':discop-worker')
 }
 
-application {
-    mainClass = 'discop.cli.App'
-}
+mainClassName = 'discop.cli.App'
 
 protobuf {
     protoc {
