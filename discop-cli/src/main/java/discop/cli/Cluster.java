@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.ServerSocket;
+import java.net.Socket;
+
 import discop.protobuf.msg.*;
 
 public class Cluster {
@@ -17,21 +19,29 @@ public class Cluster {
                 var methodLength = source.read();
                 var methodChars = source.readNBytes(methodLength);
                 var method = new String(methodChars);
-
-                switch (method) {
-                    case "Ping":
-                        var message = receiveRequest(source, ClusterMessage.Ping.parser());
-                        System.out.println(message.getFoo());
-                        var reply = ClusterMessage.Pong.newBuilder().build();
-                        sendResponse(socket.getOutputStream(), reply);
-                        break;
-                    default:
-                        System.err.printf("Unhandled method: %s\n", method);
-                        break;
-                }
+                handleMethodCall(method, source, socket.getOutputStream());
             } finally {
                 socket.close();
             }
+        }
+    }
+
+    void handleMethodCall(String method, InputStream source, OutputStream output) throws IOException {
+        switch (method) {
+            case "Ping": {
+                var message = receiveRequest(source, ClusterMessage.Ping.parser());
+                System.out.println(message.getFoo());
+                var reply = ClusterMessage.Pong.newBuilder().build();
+                sendResponse(output, reply);
+                break;
+            }
+            case "RunJob": {
+                var message = receiveRequest(source, ClusterMessage.RunJob.parser());
+                break;
+            }
+            default:
+                System.err.printf("Unhandled method: %s\n", method);
+                break;
         }
     }
 

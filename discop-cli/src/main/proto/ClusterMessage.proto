@@ -7,3 +7,9 @@ message Ping {
     string foo = 1;
 }
 message Pong {}
+
+
+message RunJob {
+    uint64 job_id = 1;
+    bytes wasi_bytes = 2;
+}
