@@ -8,4 +8,5 @@ plugins {
 
 dependencies {
     api project(':discop-core')
+    implementation "io.github.kawamuray.wasmtime:wasmtime-java:0.4.0"
 }
