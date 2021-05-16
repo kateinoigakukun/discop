@@ -6,7 +6,6 @@ plugins {
 dependencies {
     implementation 'org.slf4j:slf4j-log4j12:1.7.21'
     implementation project(':discop-core')
-    implementation "io.github.kawamuray.wasmtime:wasmtime-java:0.4.0"
 }
 
-mainClassName = 'discop.worker.App'
+mainClassName = 'discop.scheduler.App'

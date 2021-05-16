@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+option java_package = "discop.protobuf.msg";
+
+message JobInput {
+    repeated string arguments = 1;
+}
+
+message JobOutput {
+    string stdout = 1;
+}
+
+message AllocJob {
+    uint64 job_id = 1;
+    bytes wasm_bytes = 2;
+    repeated JobInput inputs = 3;
+}
+
+message GetJobStatus {
+    uint64 job_id = 1;
+}
+
+message RunSyncJob {
+    uint64 job_id = 1;
+    bytes wasm_bytes = 2;
+    repeated JobInput inputs = 3;
+}
+
+message NotifyJobCompleted {
+    uint64 job_id = 1;
+    repeated JobOutput outputs = 2;
+}
