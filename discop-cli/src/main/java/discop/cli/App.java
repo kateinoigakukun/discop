@@ -23,7 +23,7 @@ public class App {
                 break;
             case Send:
                 var client = new Client();
-                client.ping();
+                client.queueJob();
                 break;
         }
     }

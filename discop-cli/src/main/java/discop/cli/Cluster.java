@@ -7,6 +7,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 
 import discop.protobuf.msg.*;
+import discop.worker.Worker;
 
 public class Cluster {
     static int DEFAULT_PORT = 8030;
@@ -37,6 +38,8 @@ public class Cluster {
             }
             case "RunJob": {
                 var message = receiveRequest(source, ClusterMessage.RunJob.parser());
+                var worker = new Worker();
+                worker.run(message);
                 break;
             }
             default:

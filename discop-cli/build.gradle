@@ -1,38 +1,13 @@
 plugins {
     id 'discop.java-application-conventions'
     id 'com.github.johnrengelman.shadow' version '6.1.0'
-    id 'com.google.protobuf' version '0.8.15'
 }
 
 dependencies {
     implementation 'org.apache.commons:commons-text'
-    implementation 'com.google.protobuf:protobuf-java:3.12.0'
+    implementation 'org.slf4j:slf4j-log4j12:1.7.21'
+    implementation project(':discop-core')
     implementation project(':discop-worker')
 }
 
 mainClassName = 'discop.cli.App'
-
-protobuf {
-    protoc {
-        artifact = 'com.google.protobuf:protoc:3.12.0'
-    }
-    plugins {
-        grpc {
-            artifact = 'io.grpc:protoc-gen-grpc-java:1.37.0'
-        }
-    }
-    generateProtoTasks {
-        all()*.plugins {
-            grpc { }
-        }
-    }
-}
-
-sourceSets {
-    main {
-        java {
-            srcDirs 'build/generated/source/proto/main/grpc'
-            srcDirs 'build/generated/source/proto/main/java'
-        }
-    }
-}
