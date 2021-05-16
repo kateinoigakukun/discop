@@ -3,7 +3,49 @@
  */
 package discop.cli;
 
+import java.io.IOException;
+import java.util.Arrays;
+
 public class App {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
+        Options options;
+        try {
+            options = parseOptions(args);
+        } catch (OptionsError e) {
+            System.err.println(e.getMessage());
+            return;
+        }
+
+        switch (options) {
+            case Serve:
+                Cluster cluster = new Cluster();
+                cluster.start();
+                break;
+            case Send:
+                var client = new Client();
+                client.ping();
+                break;
+        }
+    }
+
+    enum Options {
+        Serve, Send
+    }
+
+    static class OptionsError extends Exception {
+        public OptionsError(String message) {
+            super(message);
+        }
+    }
+    static Options parseOptions(String[] args) throws OptionsError {
+        if (args.length < 1) {
+            throw new OptionsError("Not enough arguments");
+        }
+        var subcommand = args[0];
+        switch (subcommand) {
+            case "serve": return Options.Serve;
+            case "send": return Options.Send;
+            default: throw new OptionsError("Unsupported subcommand: '" + subcommand + "'");
+        }
     }
 }
