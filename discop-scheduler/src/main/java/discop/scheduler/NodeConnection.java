@@ -6,10 +6,6 @@ import discop.protobuf.msg.SchedulerMessage;
 
 import java.io.IOException;
 import java.net.Socket;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.Selector;
-import java.nio.channels.SocketChannel;
-import java.util.Iterator;
 
 class NodeConnection implements Runnable {
     Socket socket;
@@ -67,6 +63,7 @@ class NodeConnection implements Runnable {
     }
 
     private void allocJob(SchedulerMessage.Job payload) {
+        scheduler.addJob(payload);
     }
 
     private void sendMessage(Message message) throws IOException {
