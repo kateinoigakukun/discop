@@ -8,6 +8,10 @@ import java.util.concurrent.SynchronousQueue;
 class JobScheduler {
     SynchronousQueue<SchedulerMessage.Job> queue;
 
+    JobScheduler() {
+        this.queue = new SynchronousQueue<>();
+    }
+
     void addJob(SchedulerMessage.Job job) {
         queue.add(job);
     }
