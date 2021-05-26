@@ -22,34 +22,3 @@ jobs:
         with:
           name: discop-scheduler-jar
           path: discop-scheduler/build/libs/discop-scheduler-all.jar
-
-  build_native_image:
-    strategy:
-      matrix:
-        include:
-          - build_os: ubuntu-18.04
-            target: x86_64-linux-gnu-ubuntu-18.04
-          - build_os: ubuntu-20.04
-            target: x86_64-linux-gnu-ubuntu-20.04
-          - build_os: macos-10.15
-            target: x86_64-apple-darwin
-    name: Build native-image on ${{ matrix.build_os }}
-    runs-on: ${{ matrix.build_os }}
-    steps:
-      - uses: actions/checkout@v2
-      - name: Setup GraalVM Environment
-        uses: DeLaGuardo/setup-graalvm@master
-        with:
-          graalvm: '21.1.0'
-          java: 'java11'
-      - name: Install native-image component
-        run: gu install native-image
-      - run: ./scripts/build-native-image.sh
-      - uses: actions/upload-artifact@v2
-        with:
-          name: discop-cli-${{ matrix.target }}
-          path: build/discop-cli
-      - uses: actions/upload-artifact@v2
-        with:
-          name: discop-scheduler-${{ matrix.target }}
-          path: build/discop-scheduler
