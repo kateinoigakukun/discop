@@ -11,6 +11,7 @@ import discop.worker.Worker;
 
 public class Cluster {
     static int DEFAULT_PORT = 8030;
+
     void start() throws IOException {
         var server = new ServerSocket(DEFAULT_PORT);
         while (true) {

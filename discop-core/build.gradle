@@ -18,7 +18,7 @@ protobuf {
     }
     generateProtoTasks {
         all()*.plugins {
-            grpc { }
+            grpc {}
         }
     }
 }

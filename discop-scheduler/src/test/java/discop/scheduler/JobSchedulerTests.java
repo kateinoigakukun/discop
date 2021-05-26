@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 
 public class JobSchedulerTests {
     private final JobScheduler scheduler = new JobScheduler();
+
     @Test
     void addJob() {
         final var job = SchedulerMessage.Job.newBuilder().build();

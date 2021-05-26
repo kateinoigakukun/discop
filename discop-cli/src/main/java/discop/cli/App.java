@@ -37,15 +37,19 @@ public class App {
             super(message);
         }
     }
+
     static Options parseOptions(String[] args) throws OptionsError {
         if (args.length < 1) {
             throw new OptionsError("Not enough arguments");
         }
         var subcommand = args[0];
         switch (subcommand) {
-            case "serve": return Options.Serve;
-            case "send": return Options.Send;
-            default: throw new OptionsError("Unsupported subcommand: '" + subcommand + "'");
+            case "serve":
+                return Options.Serve;
+            case "send":
+                return Options.Send;
+            default:
+                throw new OptionsError("Unsupported subcommand: '" + subcommand + "'");
         }
     }
 }

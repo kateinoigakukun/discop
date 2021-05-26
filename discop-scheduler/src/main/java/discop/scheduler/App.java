@@ -5,6 +5,7 @@ import java.util.Iterator;
 
 class App {
     static int DEFAULT_PORT = 8040;
+
     public static void main(String[] args) throws Exception {
         var scheduler = new JobScheduler();
         var nodePool = new NodePool();

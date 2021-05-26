@@ -4,7 +4,6 @@ import discop.core.Message;
 import discop.core.Serialization;
 import discop.protobuf.msg.SchedulerMessage;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
@@ -13,6 +12,7 @@ import java.io.IOException;
 
 public class NodeConnectionTests {
     private final JobScheduler scheduler = new JobScheduler();
+
     @Test
     void runJob() throws IOException {
         final var input = new ByteArrayInputStream(new byte[]{});
