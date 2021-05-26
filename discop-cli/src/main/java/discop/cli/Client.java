@@ -2,7 +2,11 @@ package discop.cli;
 
 
 import com.google.protobuf.ByteString;
+import discop.core.Message;
+import discop.core.Serialization;
+import discop.core.TransportConfiguration;
 import discop.protobuf.msg.ClusterMessage;
+import discop.protobuf.msg.SchedulerMessage;
 
 import java.io.BufferedOutputStream;
 import java.io.IOException;
@@ -35,6 +39,21 @@ public class Client {
         var os = new BufferedOutputStream(socket.getOutputStream());
         sendRequest(os, "RunJob", message);
         socket.close();
+    }
+
+    void scheduleJob() throws Exception {
+        byte[] wasmBytes = {
+                0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00, 0x01, 0x04, 0x01, 0x60, 0x00, 0x00, 0x02, 0x0a,
+                0x01, 0x00, 0x05, 0x68, 0x65, 0x6c, 0x6c, 0x6f, 0x00, 0x00, 0x03, 0x02, 0x01, 0x00, 0x07, 0x07,
+                0x01, 0x03, 0x72, 0x75, 0x6e, 0x00, 0x01, 0x0a, 0x06, 0x01, 0x04, 0x00, 0x10, 0x00, 0x0b
+        };
+        final var jobInput = SchedulerMessage.JobInput.newBuilder().build();
+        final var job = SchedulerMessage.Job.newBuilder()
+                .setWasmBytes(ByteString.copyFrom(wasmBytes))
+                .addInputs(jobInput).build();
+        final var message = new Message("AllocJob", job.toByteArray());
+        var socket = new Socket("localhost", TransportConfiguration.SCHEDULER_DEFAULT_PORT);
+        Serialization.serializeMessage(socket.getOutputStream(), message);
     }
 
     void sendRequest(OutputStream os, String method, com.google.protobuf.Message message) throws IOException {

@@ -1,11 +1,12 @@
 package discop.scheduler;
 
+import discop.core.Serialization;
+import discop.core.TransportConfiguration;
+
 import java.io.IOException;
 import java.net.ServerSocket;
-import java.nio.channels.ServerSocketChannel;
 
 class Server implements Runnable {
-    static int DEFAULT_PORT = 8040;
     JobScheduler scheduler;
     NodePool nodePool;
 
@@ -25,7 +26,7 @@ class Server implements Runnable {
     }
 
     void start() throws IOException {
-        var server = new ServerSocket(DEFAULT_PORT);
+        var server = new ServerSocket(TransportConfiguration.SCHEDULER_DEFAULT_PORT);
 
         while (true) {
             var socket = server.accept();

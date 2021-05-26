@@ -23,24 +23,26 @@ class NodeConnection implements Runnable {
     public void run() {
         try {
             start();
-        } catch (IOException e) {
+        } catch (Exception e) {
             System.err.printf("Unexpected exception happened in NodeConnection: %s\n", e.getMessage());
             e.printStackTrace();
+            try {
+                socketInput.close();
+                socketOutput.close();
+            } catch (IOException closingError) {
+                System.err.printf("Unexpected exception happened in NodeConnection while closing: %s\n", closingError.getMessage());
+                closingError.printStackTrace();
+            }
         }
     }
 
     void start() throws IOException {
-        try {
-            while (true) {
-                var message = Serialization.deserializeMessage(socketInput);
-                var shouldContinue = handleMessage(message);
-                if (!shouldContinue) {
-                    break;
-                }
+        while (true) {
+            var message = Serialization.deserializeMessage(socketInput);
+            var shouldContinue = handleMessage(message);
+            if (!shouldContinue) {
+                break;
             }
-        } finally {
-            socketInput.close();
-            socketOutput.close();
         }
     }
 
@@ -73,8 +75,8 @@ class NodeConnection implements Runnable {
     }
 
     void runJob(SchedulerMessage.Job job) throws IOException {
-        var payload = SchedulerMessage.RunAsyncJob.newBuilder().build();
-        var message = new Message("RunAsyncJob", payload.toByteArray());
-        sendMessage(message);
+//        var payload = SchedulerMessage.RunAsyncJob.newBuilder().build();
+//        var message = new Message("RunAsyncJob", payload.toByteArray());
+//        sendMessage(message);
     }
 }
