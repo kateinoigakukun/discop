@@ -5,17 +5,18 @@ import discop.core.Serialization;
 import discop.protobuf.msg.SchedulerMessage;
 
 import java.io.IOException;
-import java.net.Socket;
+import java.io.InputStream;
+import java.io.OutputStream;
 
 class NodeConnection implements Runnable {
-    Socket socket;
-    JobScheduler scheduler;
-    Serialization serialization;
+    final InputStream socketInput;
+    final OutputStream socketOutput;
+    final JobScheduler scheduler;
 
-    NodeConnection(Socket socket, JobScheduler scheduler) {
-        this.socket = socket;
+    NodeConnection(InputStream socketInput, OutputStream socketOutput, JobScheduler scheduler) {
+        this.socketInput = socketInput;
+        this.socketOutput = socketOutput;
         this.scheduler = scheduler;
-        this.serialization = new Serialization();
     }
 
     @Override
@@ -29,18 +30,17 @@ class NodeConnection implements Runnable {
     }
 
     void start() throws IOException {
-        var serialization = new Serialization();
         try {
-            var source = socket.getInputStream();
             while (true) {
-                var message = serialization.deserializeMessage(source);
+                var message = Serialization.deserializeMessage(socketInput);
                 var shouldContinue = handleMessage(message);
                 if (!shouldContinue) {
                     break;
                 }
             }
         } finally {
-            socket.close();
+            socketInput.close();
+            socketOutput.close();
         }
     }
 
@@ -67,8 +67,8 @@ class NodeConnection implements Runnable {
     }
 
     private void sendMessage(Message message) throws IOException {
-        synchronized (socket) {
-            serialization.serializeMessage(socket.getOutputStream(), message);
+        synchronized (socketOutput) {
+            Serialization.serializeMessage(socketOutput, message);
         }
     }
 

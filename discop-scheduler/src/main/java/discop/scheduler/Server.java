@@ -29,7 +29,7 @@ class Server implements Runnable {
 
         while (true) {
             var socket = server.accept();
-            var connection = new NodeConnection(socket, scheduler);
+            var connection = new NodeConnection(socket.getInputStream(), socket.getOutputStream(), scheduler);
             nodePool.addNode(connection);
             new Thread(connection).start();
         }
