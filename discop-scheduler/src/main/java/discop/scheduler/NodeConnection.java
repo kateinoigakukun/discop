@@ -12,11 +12,14 @@ class NodeConnection implements Runnable {
     final InputStream socketInput;
     final OutputStream socketOutput;
     final JobScheduler scheduler;
+    final NodeConnectionListener listener;
 
-    NodeConnection(InputStream socketInput, OutputStream socketOutput, JobScheduler scheduler) {
+    NodeConnection(InputStream socketInput, OutputStream socketOutput, JobScheduler scheduler,
+                   NodeConnectionListener listener) {
         this.socketInput = socketInput;
         this.socketOutput = socketOutput;
         this.scheduler = scheduler;
+        this.listener = listener;
     }
 
     @Override
@@ -33,6 +36,8 @@ class NodeConnection implements Runnable {
                 System.err.printf("Unexpected exception happened in NodeConnection while closing: %s\n", closingError.getMessage());
                 closingError.printStackTrace();
             }
+        } finally {
+            listener.onClosed(this);
         }
     }
 

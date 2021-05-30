@@ -9,10 +9,14 @@ import java.util.List;
 
 // Must be thread-safe
 class NodePool {
-    List<NodeConnection> connectionList = new ArrayList<>();
+    private List<NodeConnection> connectionList = new ArrayList<>();
 
     void addNode(NodeConnection connection) {
         this.connectionList.add(connection);
+    }
+
+    void removeNode(NodeConnection connection) {
+        this.connectionList.remove(connection);
     }
 
     Iterator<NodeConnection> selectNodeForJob(SchedulerMessage.Job job) {
