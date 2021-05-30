@@ -28,7 +28,7 @@ class Server implements Runnable {
     void start() throws IOException {
         var server = new ServerSocket(TransportConfiguration.SCHEDULER_DEFAULT_PORT);
 
-        while (true) {
+        while (!server.isClosed()) {
             var socket = server.accept();
             var connection = new NodeConnection(socket.getInputStream(), socket.getOutputStream(), scheduler, new NodeConnectionListener() {
                 @Override

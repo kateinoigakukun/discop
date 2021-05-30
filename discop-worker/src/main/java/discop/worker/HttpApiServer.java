@@ -16,19 +16,21 @@ import java.io.OutputStream;
 import java.net.InetSocketAddress;
 
 public class HttpApiServer implements Runnable {
-    final int HTTP_API_SERVER_PORT = 8030;
     private HttpServer server;
     private final OutputStream outgoing;
     private final Logger logger = LoggerFactory.getLogger(HttpApiServer.class);
+    private final int port;
 
-    HttpApiServer(OutputStream outgoing) {
+    HttpApiServer(OutputStream outgoing, int port) {
         this.outgoing = outgoing;
+        this.port = port;
     }
 
     @Override
     public void run() {
         try {
-            var addr = new InetSocketAddress(HTTP_API_SERVER_PORT);
+            var addr = new InetSocketAddress(port);
+            logger.info("Listening {} for API server", addr);
             var loggerFilter = new Filter() {
                 @Override
                 public void doFilter(HttpExchange http, Chain chain) throws IOException {

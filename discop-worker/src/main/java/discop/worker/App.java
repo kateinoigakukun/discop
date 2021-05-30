@@ -49,9 +49,11 @@ public class App {
                     var runJob = SchedulerMessage.Job.parseFrom(message.payload);
                     var worker = new Worker();
                     worker.experimentalRunJob(runJob);
+                    break;
                 }
                 default: {
                     logger.warn("Unhandled incoming message \"{}\"", message.type);
+                    break;
                 }
             }
         }
@@ -65,10 +67,20 @@ public class App {
         }
     }
 
+    static int getApiServerPort() {
+        var port = System.getenv("DISCOP_WORKER_API_PORT");
+        var defaultPort = 8080;
+        if (port == null) return defaultPort;
+        try {
+            return Integer.parseInt(port);
+        } catch (Exception e) {
+            return defaultPort;
+        }
+    }
     public static void main(String[] args) throws Exception {
         var socket = new Socket("localhost", TransportConfiguration.SCHEDULER_DEFAULT_PORT);
         var connection = new SchedulerConnection(socket);
-        var server = new HttpApiServer(socket.getOutputStream());
+        var server = new HttpApiServer(socket.getOutputStream(), getApiServerPort());
         new Thread(connection).start();
         new Thread(server).start();
         connection.awaitTermination();
