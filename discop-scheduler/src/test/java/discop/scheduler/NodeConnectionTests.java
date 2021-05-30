@@ -28,7 +28,7 @@ public class NodeConnectionTests {
     }
 
     @Test
-    void handleAllocJob() throws IOException {
+    void handleAllocJob() throws Exception {
         final var job = SchedulerMessage.Job.newBuilder().build();
         final var message = new Message("AllocJob", job.toByteArray());
         final var messageOutput = new ByteArrayOutputStream();
