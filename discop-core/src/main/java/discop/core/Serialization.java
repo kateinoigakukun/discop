@@ -14,9 +14,11 @@ public class Serialization {
 
     public static Message deserializeMessage(InputStream source) throws IOException {
         var typeLength = source.read();
+        if (typeLength < 0) return null;
         var typeChars = source.readNBytes(typeLength);
         var type = new String(typeChars);
         var payloadLength = source.read();
+        if (payloadLength < 0) return null;
         var payload = source.readNBytes(payloadLength);
         return new Message(type, payload);
     }

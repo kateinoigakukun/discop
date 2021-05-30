@@ -1,8 +1,5 @@
 package discop.scheduler;
 
-import java.net.InetSocketAddress;
-import java.util.Iterator;
-
 class App {
     static int DEFAULT_PORT = 8040;
 
@@ -13,6 +10,8 @@ class App {
         serverThread.start();
         while (true) {
             var job = scheduler.nextJob();
+            // TODO: Resume only after new job came
+            if (job == null) continue;
             var workerNodes = nodePool.selectNodeForJob(job);
 
             for (var it = workerNodes; it.hasNext(); ) {

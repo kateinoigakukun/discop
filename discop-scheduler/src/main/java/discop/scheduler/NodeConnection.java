@@ -39,6 +39,10 @@ class NodeConnection implements Runnable {
     void start() throws IOException {
         while (true) {
             var message = Serialization.deserializeMessage(socketInput);
+            if (message == null) {
+                break;
+            }
+            System.out.println(message.type);
             var shouldContinue = handleMessage(message);
             if (!shouldContinue) {
                 break;
@@ -75,8 +79,7 @@ class NodeConnection implements Runnable {
     }
 
     void runJob(SchedulerMessage.Job job) throws IOException {
-//        var payload = SchedulerMessage.RunAsyncJob.newBuilder().build();
-//        var message = new Message("RunAsyncJob", payload.toByteArray());
-//        sendMessage(message);
+        var message = new Message("RunAsyncJob", job.toByteArray());
+        sendMessage(message);
     }
 }
