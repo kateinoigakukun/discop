@@ -48,7 +48,7 @@ public class App {
                 case "RunAsyncJob": {
                     var runJob = SchedulerMessage.Job.parseFrom(message.payload);
                     var worker = new Worker();
-                    worker.experimentalRunJob(runJob);
+                    worker.runJob(runJob);
                     break;
                 }
                 default: {

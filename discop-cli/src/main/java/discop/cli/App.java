@@ -23,7 +23,6 @@ public class App {
                 break;
             case Send:
                 var client = new Client();
-//                client.queueJob();
                 client.scheduleJob();
                 break;
         }
