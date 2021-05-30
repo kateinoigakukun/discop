@@ -80,7 +80,8 @@ public class App {
     public static void main(String[] args) throws Exception {
         var socket = new Socket("localhost", TransportConfiguration.SCHEDULER_DEFAULT_PORT);
         var connection = new SchedulerConnection(socket);
-        var server = new HttpApiServer(socket.getOutputStream(), getApiServerPort());
+        var jobQueue = new JobQueue(socket.getOutputStream());
+        var server = new HttpApiServer(jobQueue, getApiServerPort());
         new Thread(connection).start();
         new Thread(server).start();
         connection.awaitTermination();

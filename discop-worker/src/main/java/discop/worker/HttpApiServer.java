@@ -17,12 +17,12 @@ import java.net.InetSocketAddress;
 
 public class HttpApiServer implements Runnable {
     private HttpServer server;
-    private final OutputStream outgoing;
+    private final JobQueue jobQueue;
     private final Logger logger = LoggerFactory.getLogger(HttpApiServer.class);
     private final int port;
 
-    HttpApiServer(OutputStream outgoing, int port) {
-        this.outgoing = outgoing;
+    HttpApiServer(JobQueue jobQueue, int port) {
+        this.jobQueue = jobQueue;
         this.port = port;
     }
 
@@ -55,13 +55,12 @@ public class HttpApiServer implements Runnable {
                 @Override
                 public void handle(HttpExchange exchange) throws IOException {
                     byte[] wasmBytes = exchange.getRequestBody().readAllBytes();
-                    final var jobInput = SchedulerMessage.JobInput.newBuilder().build();
-                    final var job = SchedulerMessage.Job.newBuilder()
-                            .setWasmBytes(ByteString.copyFrom(wasmBytes))
-                            .addInputs(jobInput).build();
-                    final var message = new Message("AllocJob", job.toByteArray());
-                    Serialization.serializeMessage(outgoing, message);
-                    exchange.sendResponseHeaders(200, 0);
+                    try {
+                        jobQueue.addJob(wasmBytes);
+                        exchange.sendResponseHeaders(200, 0);
+                    } catch (IOException e) {
+                        exchange.sendResponseHeaders(500, 0);
+                    }
                     exchange.getResponseBody().close();
                 }
             })
