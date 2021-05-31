@@ -8,6 +8,7 @@ message JobInput {
 
 message JobOutput {
     string stdout = 1;
+    int32 exit_code = 2;
 }
 
 message Ack {}
