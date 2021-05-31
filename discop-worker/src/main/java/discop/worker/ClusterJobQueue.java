@@ -8,9 +8,9 @@ import discop.protobuf.msg.SchedulerMessage;
 import java.io.IOException;
 import java.io.OutputStream;
 
-public class JobQueue {
+public class ClusterJobQueue {
     final OutputStream schedulerOutgoing;
-    JobQueue(OutputStream schedulerOutgoing) {
+    ClusterJobQueue(OutputStream schedulerOutgoing) {
         this.schedulerOutgoing = schedulerOutgoing;
     }
 

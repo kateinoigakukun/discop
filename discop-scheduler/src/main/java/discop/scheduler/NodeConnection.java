@@ -62,6 +62,9 @@ class NodeConnection implements Runnable {
                 allocJob(payload);
                 break;
             }
+            case "NotifyJobCompleted": {
+                var payload = SchedulerMessage.NotifyJobCompleted.parseFrom(message.payload);
+            }
             case "EndOfConnection": {
                 return false;
             }

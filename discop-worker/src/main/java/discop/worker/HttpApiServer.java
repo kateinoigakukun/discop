@@ -1,27 +1,22 @@
 package discop.worker;
 
-import com.google.protobuf.ByteString;
 import com.sun.net.httpserver.Filter;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
-import discop.core.Message;
-import discop.core.Serialization;
-import discop.protobuf.msg.SchedulerMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.net.InetSocketAddress;
 
 public class HttpApiServer implements Runnable {
     private HttpServer server;
-    private final JobQueue jobQueue;
+    private final ClusterJobQueue jobQueue;
     private final Logger logger = LoggerFactory.getLogger(HttpApiServer.class);
     private final int port;
 
-    HttpApiServer(JobQueue jobQueue, int port) {
+    HttpApiServer(ClusterJobQueue jobQueue, int port) {
         this.jobQueue = jobQueue;
         this.port = port;
     }

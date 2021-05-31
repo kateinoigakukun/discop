@@ -29,24 +29,6 @@ public class Cluster {
     }
 
     void handleMethodCall(String method, InputStream source, OutputStream output) throws IOException {
-        switch (method) {
-            case "Ping": {
-                var message = receiveRequest(source, ClusterMessage.Ping.parser());
-                System.out.println(message.getFoo());
-                var reply = ClusterMessage.Pong.newBuilder().build();
-                sendResponse(output, reply);
-                break;
-            }
-            case "RunJob": {
-                var message = receiveRequest(source, ClusterMessage.RunJob.parser());
-                var worker = new Worker();
-                worker.run(message);
-                break;
-            }
-            default:
-                System.err.printf("Unhandled method: %s\n", method);
-                break;
-        }
     }
 
     void sendResponse(OutputStream os, com.google.protobuf.Message message) throws IOException {
