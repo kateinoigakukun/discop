@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.net.Socket;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Function;
 
 public class SchedulerConnection implements Runnable, JobCompletionPublisher {
@@ -19,6 +20,7 @@ public class SchedulerConnection implements Runnable, JobCompletionPublisher {
     private final Logger logger = LoggerFactory.getLogger(App.class);
 
     private final ConcurrentHashMap<Long, Function<SchedulerMessage.JobCompletion, Void>> subscribers;
+    private ConcurrentLinkedQueue<Function<RPC.Message, Void>> onResponseHandlers = new ConcurrentLinkedQueue<>();
 
     SchedulerConnection(Socket socket, JobDispatcher listener) {
         this.socket = socket;
@@ -49,7 +51,8 @@ public class SchedulerConnection implements Runnable, JobCompletionPublisher {
         }
     }
 
-    void sendRequest(RPC.Message message) throws IOException {
+    void sendRequest(RPC.Message message, Function<RPC.Message, Void> onResponse) throws IOException {
+        onResponseHandlers.add(onResponse);
         RPC.Serialization.serializeMessage(socket.getOutputStream(), message);
     }
 
@@ -81,14 +84,12 @@ public class SchedulerConnection implements Runnable, JobCompletionPublisher {
     }
 
     private void handleResponse(RPC.Message message, RPC.ResponseType responseType) throws IOException {
-        switch (responseType) {
-            case JobAllocated: {
-                var job = SchedulerMessage.JobUnit.parseFrom(message.payload);
-                break;
-            }
-            default: {
-            }
+        var handler = onResponseHandlers.poll();
+        if (handler == null) {
+            logger.error("No handler is registered before getting response: {} {}", responseType, message);
+            return;
         }
+        handler.apply(message);
     }
 
     @Override

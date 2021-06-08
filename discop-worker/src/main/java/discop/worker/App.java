@@ -34,7 +34,7 @@ public class App {
         connectionHandshake(socket);
         var dispatcher = new JobDispatcher(socket.getOutputStream());
         var connection = new SchedulerConnection(socket, dispatcher);
-        var clusterJobQueue = new ClusterJobQueue(socket.getOutputStream());
+        var clusterJobQueue = new ClusterJobQueue(connection);
         var server = new HttpApiServer(getApiServerPort(), clusterJobQueue, connection);
         new Thread(connection).start();
         new Thread(server).start();

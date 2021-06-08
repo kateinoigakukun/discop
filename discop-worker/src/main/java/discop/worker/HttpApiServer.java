@@ -1,9 +1,10 @@
 package discop.worker;
 
+import com.google.gson.Gson;
 import com.sun.net.httpserver.Filter;
 import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+import discop.protobuf.msg.SchedulerMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,25 +49,42 @@ public class HttpApiServer implements Runnable {
             };
 
             server = HttpServer.create(addr, 0);
-            server.createContext("/run_job", new HttpHandler() {
-                @Override
-                public void handle(HttpExchange exchange) throws IOException {
-                    byte[] wasmBytes = exchange.getRequestBody().readAllBytes();
-                    try {
-                        jobQueue.addJob(wasmBytes);
-//                        publisher.subscribe();
-                        exchange.sendResponseHeaders(200, 0);
-                    } catch (IOException e) {
-                        exchange.sendResponseHeaders(500, 0);
-                    }
-                    exchange.getResponseBody().close();
-                }
-            })
+            server.createContext("/run_job", this::handleRunJob)
                     .getFilters().add(loggerFilter);
             server.start();
         } catch (IOException e) {
-            e.printStackTrace(System.err);
+            logger.error("IO failure while server bootstrap: {}", e.toString());
         }
+    }
+
+    private void handleRunJob(HttpExchange exchange) throws IOException {
+        byte[] wasmBytes = exchange.getRequestBody().readAllBytes();
+        jobQueue.addJob(wasmBytes, jobId -> {
+            publisher.subscribe(jobId, completion -> {
+                try {
+                    if (completion == null) {
+                        exchange.sendResponseHeaders(500, 0);
+                        return null;
+                    }
+                    var headers = exchange.getResponseHeaders();
+                    headers.set("Content-Type", "application/json");
+                    exchange.sendResponseHeaders(200, 0);
+                    var json = buildRunJobResponse(completion);
+                    var os = exchange.getResponseBody();
+                    os.write(json.getBytes());
+                    os.close();
+                } catch (IOException e) {
+                    logger.error("IO failed to set response {}", e.toString());
+                }
+                return null;
+            });
+            return null;
+        });
+    }
+
+    private String buildRunJobResponse(SchedulerMessage.JobCompletion completion) {
+        var gson = new Gson();
+        return gson.toJson(completion);
     }
 
     public void shutdown() {
