@@ -39,11 +39,11 @@ public class NodeConnectionTests {
     @Test
     void handleAllocJob() throws Exception {
         final var job = SchedulerMessage.Job.newBuilder().build();
-        final var message = new RPC.Message("AllocJob", job.toByteArray());
+        final var message = new RPC.Message(RPC.MessageType.AllocJob, job.toByteArray());
         final var messageOutput = new ByteArrayOutputStream();
         RPC.Serialization.serializeMessage(messageOutput, message);
 
-        final var eocMessage = new RPC.Message("EndOfConnection", new byte[]{});
+        final var eocMessage = new RPC.Message(RPC.MessageType.EndOfConnection, new byte[]{});
         RPC.Serialization.serializeMessage(messageOutput, eocMessage);
 
         final var scheduler = new JobScheduler();

@@ -22,26 +22,26 @@ public class RPC {
         };
     }
 
-    public enum SchedulerRequestType {
-    }
-    public enum SchedulerResponseType {
+    public enum MessageType {
+        // Worker Notification
+        Init,
+        // Worker Request
+        AllocJob,
+        EndOfConnection,
+        // Scheduler Notification
+        NotifyJobCompleted,
+        // Scheduler Response
         JobAllocated,
         RunAsyncJob,
         CompleteJob,
-    }
-    public enum SchedulerNotificationType {
-    }
-    public enum WorkerRequestType {
-    }
-    public enum WorkerResponseType {
     }
 
     public static class Message {
         public String type;
         public byte[] payload;
 
-        public Message(String type, byte[] payload) {
-            this.type = type;
+        public Message(MessageType type, byte[] payload) {
+            this.type = type.toString();
             this.payload = payload;
         }
     }
@@ -60,7 +60,7 @@ public class RPC {
             var typeLength = source.read();
             if (typeLength < 0) return null;
             var typeChars = source.readNBytes(typeLength);
-            var type = new String(typeChars);
+            var type = MessageType.valueOf(new String(typeChars));
             var payloadLength = bytesToInt(source.readNBytes(4));
             if (payloadLength < 0) return null;
             var payload = source.readNBytes(payloadLength);

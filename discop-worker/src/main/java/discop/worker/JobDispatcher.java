@@ -21,7 +21,7 @@ public class JobDispatcher {
                     var completion = SchedulerMessage.BulkJobUnitCompletion
                             .newBuilder()
                             .addAllOutputs(output).build();
-                    var message = new RPC.Message("NotifyJobCompleted", completion.toByteArray());
+                    var message = new RPC.Message(RPC.MessageType.NotifyJobCompleted, completion.toByteArray());
                     RPC.Serialization.serializeMessage(schedulerOutgoing, message);
                 } catch (IOException e) {
                     e.printStackTrace(System.err);

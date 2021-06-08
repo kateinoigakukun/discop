@@ -94,12 +94,12 @@ class NodeConnection implements Runnable {
     }
 
     void runJob(SchedulerMessage.Job job) throws IOException {
-        var message = new RPC.Message("RunAsyncJob", job.toByteArray());
+        var message = new RPC.Message(RPC.MessageType.RunAsyncJob, job.toByteArray());
         sendMessage(message);
     }
 
     void completeJob(SchedulerMessage.JobCompletion completion) throws IOException {
-        var message = new RPC.Message("CompleteJob", completion.toByteArray());
+        var message = new RPC.Message(RPC.MessageType.CompleteJob, completion.toByteArray());
         sendMessage(message);
     }
 
