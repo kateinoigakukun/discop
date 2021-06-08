@@ -2,6 +2,10 @@ syntax = "proto3";
 
 option java_package = "discop.protobuf.msg";
 
+message NodeSpec {
+    uint32 core_count = 1;
+}
+
 message JobInput {
     repeated string arguments = 1;
 }

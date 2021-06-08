@@ -7,19 +7,26 @@ import discop.protobuf.msg.SchedulerMessage;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.UUID;
 
 class NodeConnection implements Runnable {
-    final InputStream socketInput;
-    final OutputStream socketOutput;
-    final JobScheduler scheduler;
-    final NodeConnectionListener listener;
+    private final InputStream socketInput;
+    private final OutputStream socketOutput;
+    private final JobScheduler scheduler;
+    private final NodeConnectionListener listener;
+    private final UUID nodeId;
+    private final SchedulerMessage.NodeSpec spec;
 
-    NodeConnection(InputStream socketInput, OutputStream socketOutput, JobScheduler scheduler,
+    NodeConnection(InputStream socketInput, OutputStream socketOutput,
+                   SchedulerMessage.NodeSpec spec,
+                   JobScheduler scheduler,
                    NodeConnectionListener listener) {
         this.socketInput = socketInput;
         this.socketOutput = socketOutput;
+        this.spec = spec;
         this.scheduler = scheduler;
         this.listener = listener;
+        this.nodeId = UUID.randomUUID();
     }
 
     @Override
@@ -77,7 +84,7 @@ class NodeConnection implements Runnable {
     }
 
     private void allocJob(SchedulerMessage.Job payload) {
-        scheduler.addJob(payload);
+        scheduler.addJob(payload, nodeId);
     }
 
     private void sendMessage(Message message) throws IOException {
@@ -89,5 +96,9 @@ class NodeConnection implements Runnable {
     void runJob(SchedulerMessage.Job job) throws IOException {
         var message = new Message("RunAsyncJob", job.toByteArray());
         sendMessage(message);
+    }
+
+    public SchedulerMessage.NodeSpec getSpec() {
+        return spec;
     }
 }

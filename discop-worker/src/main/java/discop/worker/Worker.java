@@ -32,7 +32,7 @@ public class Worker {
         var stdoutPath = Files.createTempFile("discop-worker-wasi-stdout", "");
         var wasiConfig = new WasiConfig(
                 args, new WasiConfig.PreopenDir[0],
-                Optional.of(stdoutPath.toString()), Optional.empty()
+                stdoutPath.toString(), null
         );
         try (Store store = new Store();
              Linker linker = new Linker(store);

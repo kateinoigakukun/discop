@@ -8,16 +8,7 @@ class App {
         var nodePool = new NodePool();
         var serverThread = new Thread(new Server(scheduler, nodePool));
         serverThread.start();
-        while (true) {
-            var job = scheduler.nextJob();
-            // TODO: Resume only after new job came
-            if (job == null) continue;
-            var workerNodes = nodePool.selectNodeForJob(job);
-
-            for (var it = workerNodes; it.hasNext(); ) {
-                NodeConnection node = it.next();
-                node.runJob(job);
-            }
-        }
+        var executor = new JobExecutor(scheduler, nodePool);
+        executor.start();
     }
 }
