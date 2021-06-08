@@ -37,16 +37,17 @@ class NodeConnection implements Runnable {
         try {
             start();
         } catch (Exception e) {
-            System.err.printf("Unexpected exception happened in NodeConnection: %s\n", e.getMessage());
+            logger.error("Unexpected exception happened in NodeConnection: {}", e.getMessage());
             e.printStackTrace();
             try {
                 socketInput.close();
                 socketOutput.close();
             } catch (IOException closingError) {
-                System.err.printf("Unexpected exception happened in NodeConnection while closing: %s\n", closingError.getMessage());
+                logger.error("Unexpected exception happened in NodeConnection while closing: {}", closingError.getMessage());
                 closingError.printStackTrace();
             }
         } finally {
+            logger.info("Close connection to {}", nodeId);
             listener.onClosed(this);
         }
     }
@@ -57,7 +58,7 @@ class NodeConnection implements Runnable {
             if (message == null) {
                 break;
             }
-            System.out.println(message.type);
+            logger.info("Receive message {} from {}", message, nodeId);
             var shouldContinue = handleMessage(message);
             if (!shouldContinue) {
                 break;
@@ -102,9 +103,11 @@ class NodeConnection implements Runnable {
         switch (requestType) {
             case AllocJob: {
                 var payload = SchedulerMessage.Job.parseFrom(message.payload);
-                var allocated = scheduler.addJob(payload, nodeId);
+                var allocated = scheduler.allocJob(payload);
                 var replyMessage = RPC.Message.makeResponse(RPC.ResponseType.JobAllocated, allocated.toByteArray());
+                logger.debug("Allocate a new job in scheduler id={}", allocated.getJobId());
                 reply.apply(replyMessage);
+                scheduler.addJob(allocated, nodeId);
                 break;
             }
             default: {
@@ -116,6 +119,7 @@ class NodeConnection implements Runnable {
         synchronized (socketOutput) {
             try {
                 RPC.Serialization.serializeMessage(socketOutput, message);
+                logger.info("Send message {} to {}", message, nodeId);
             } catch (IOException e) {
                 logger.error("Failed to send message to node {}: {}", nodeId, e.toString());
             }

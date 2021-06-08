@@ -20,12 +20,13 @@ public class SchedulerConnection implements Runnable, JobCompletionPublisher {
     private final Logger logger = LoggerFactory.getLogger(App.class);
 
     private final ConcurrentHashMap<Long, Function<SchedulerMessage.JobCompletion, Void>> subscribers;
-    private ConcurrentLinkedQueue<Function<RPC.Message, Void>> onResponseHandlers = new ConcurrentLinkedQueue<>();
+    private final ConcurrentLinkedQueue<Function<RPC.Message, Void>> onResponseHandlers;
 
     SchedulerConnection(Socket socket, JobDispatcher listener) {
         this.socket = socket;
         this.listener = listener;
         this.subscribers = new ConcurrentHashMap<>();
+        this.onResponseHandlers = new ConcurrentLinkedQueue<>();
     }
 
     @Override
@@ -66,24 +67,25 @@ public class SchedulerConnection implements Runnable, JobCompletionPublisher {
 
     private void handleNotification(RPC.Message message, RPC.NotificationType notificationType) throws IOException {
         switch (notificationType) {
-            case RunAsyncJob: {
+            case RunAsyncJob -> {
                 var runJob = SchedulerMessage.JobUnit.parseFrom(message.payload);
                 listener.dispatch(runJob);
-                break;
             }
-            case CompleteJob: {
+            case CompleteJob -> {
                 var completion = SchedulerMessage.JobCompletion.parseFrom(message.payload);
-                subscribers.get(completion.getJobId()).apply(completion);
+                var subscriber = subscribers.get(completion.getJobId());
+                if (subscriber == null) {
+                    logger.error("No completion subscription is registered for job id {}", completion.getJobId());
+                    return;
+                }
+                subscriber.apply(completion);
                 subscribers.remove(completion.getJobId());
             }
-            default: {
-                logger.warn("Unhandled incoming message \"{}\"", message.type);
-                break;
-            }
+            default -> logger.warn("Unhandled incoming message \"{}\"", message.type);
         }
     }
 
-    private void handleResponse(RPC.Message message, RPC.ResponseType responseType) throws IOException {
+    private void handleResponse(RPC.Message message, RPC.ResponseType responseType) {
         var handler = onResponseHandlers.poll();
         if (handler == null) {
             logger.error("No handler is registered before getting response: {} {}", responseType, message);

@@ -68,6 +68,14 @@ public class RPC {
         public static Message makeNotification(NotificationType type, byte[] payload) {
             return new Message(MessageType.Notification, type.toString(), payload);
         }
+
+        @Override
+        public String toString() {
+            return "Message{" +
+                    "type=" + type +
+                    ", subtype='" + subtype + '\'' +
+                    '}';
+        }
     }
 
     public static class Serialization {

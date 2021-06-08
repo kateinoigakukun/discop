@@ -26,7 +26,7 @@ public class ClusterJobQueue {
         connection.sendRequest(message, response -> {
             if (RPC.ResponseType.valueOf(response.subtype) == RPC.ResponseType.JobAllocated) {
                 try {
-                    var allocated = SchedulerMessage.Job.parseFrom(message.payload);
+                    var allocated = SchedulerMessage.Job.parseFrom(response.payload);
                     completion.apply(allocated.getJobId());
                 } catch (Exception e) {
                     logger.error("Failed to parse Job message from JobAllocated response");

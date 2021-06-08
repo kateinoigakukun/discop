@@ -41,7 +41,8 @@ class Server implements Runnable {
                 socket.close();
                 continue;
             }
-            if (!message.type.equals("Init")) {
+            if (message.type != RPC.MessageType.Notification ||
+                    RPC.NotificationType.valueOf(message.subtype) != RPC.NotificationType.Init) {
                 logger.error("Expected to receive Init message, but got {}", message.type);
                 socket.close();
                 continue;

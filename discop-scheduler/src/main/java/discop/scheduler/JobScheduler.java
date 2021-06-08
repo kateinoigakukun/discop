@@ -61,10 +61,12 @@ class JobScheduler {
         return Optional.empty();
     }
 
-    SchedulerMessage.Job addJob(SchedulerMessage.Job job, UUID producerId) {
-        var allocated = job.toBuilder().setJobId(nextJobId()).build();
-        queue.add(new JobUnit(allocated, producerId));
-        return allocated;
+    SchedulerMessage.Job allocJob(SchedulerMessage.Job job) {
+        return job.toBuilder().setJobId(nextJobId()).build();
+    }
+
+    void addJob(SchedulerMessage.Job job, UUID producerId) {
+        queue.add(new JobUnit(job, producerId));
     }
 
     JobUnit nextJob() throws InterruptedException {
