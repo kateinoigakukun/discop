@@ -43,11 +43,18 @@ class Server implements Runnable {
             var connection = new NodeConnection(
                 socket.getInputStream(), socket.getOutputStream(),
                 nodeSpec,
-                scheduler, new NodeConnectionListener() {
-                @Override
-                public void onClosed(NodeConnection connection) {
-                    nodePool.removeNode(connection);
-                }
+                scheduler,
+                new NodeConnectionListener() {
+                    @Override
+                    public void onJobCompleted(
+                        NodeConnection connection,
+                        SchedulerMessage.JobOutput output) {
+                        
+                    }
+                    @Override
+                    public void onClosed(NodeConnection connection) {
+                        nodePool.removeNode(connection);
+                    }
             });
             nodePool.addNode(connection);
             new Thread(connection).start();

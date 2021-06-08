@@ -35,7 +35,10 @@ class NodePool {
         this.nodeList.removeIf((nodeState -> nodeState.connection == connection));
     }
 
-    int assignJob(JobUnit unit) throws IOException {
+    synchronized void completePartialJob() {
+        
+    }
+    synchronized int assignJob(JobUnit unit) throws IOException {
         var assigned = 0;
         var partialJobCount = unit.getOriginal().getInputsCount();
         var inputList = unit.getOriginal().getInputsList();

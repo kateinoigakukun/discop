@@ -16,6 +16,9 @@ public class NodeConnectionTests {
 
     static class NopListener implements NodeConnectionListener {
         @Override
+        public void onJobCompleted(NodeConnection connection, SchedulerMessage.JobOutput output) {
+        }
+        @Override
         public void onClosed(NodeConnection connection) {}
     }
 
