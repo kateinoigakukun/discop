@@ -12,6 +12,7 @@ import java.io.IOException;
 
 public class NodeConnectionTests {
     private final JobScheduler scheduler = new JobScheduler();
+    private final SchedulerMessage.NodeSpec nodeSpec = SchedulerMessage.NodeSpec.newBuilder().build();
 
     static class NopListener implements NodeConnectionListener {
         @Override
@@ -22,7 +23,7 @@ public class NodeConnectionTests {
     void runJob() throws IOException {
         final var input = new ByteArrayInputStream(new byte[]{});
         final var output = new ByteArrayOutputStream();
-        final var connection = new NodeConnection(input, output, scheduler, new NopListener());
+        final var connection = new NodeConnection(input, output, nodeSpec, scheduler, new NopListener());
         final var job = SchedulerMessage.Job.newBuilder().build();
         connection.runJob(job);
         final var bytes = output.toByteArray();
@@ -45,7 +46,7 @@ public class NodeConnectionTests {
         final var scheduler = new JobScheduler();
         final var input = new ByteArrayInputStream(messageOutput.toByteArray());
         final var output = new ByteArrayOutputStream();
-        final var connection = new NodeConnection(input, output, scheduler, new NopListener());
+        final var connection = new NodeConnection(input, output, nodeSpec, scheduler, new NopListener());
         connection.start();
         Assertions.assertNotNull(scheduler.nextJob());
     }

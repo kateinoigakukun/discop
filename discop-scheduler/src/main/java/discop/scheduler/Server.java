@@ -2,11 +2,14 @@ package discop.scheduler;
 
 import discop.core.Serialization;
 import discop.core.TransportConfiguration;
-
+import discop.protobuf.msg.SchedulerMessage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.net.ServerSocket;
 
 class Server implements Runnable {
+    private final Logger logger = LoggerFactory.getLogger(Server.class);
     JobScheduler scheduler;
     NodePool nodePool;
 
@@ -30,7 +33,17 @@ class Server implements Runnable {
 
         while (!server.isClosed()) {
             var socket = server.accept();
-            var connection = new NodeConnection(socket.getInputStream(), socket.getOutputStream(), scheduler, new NodeConnectionListener() {
+            var input = socket.getInputStream();
+            var message = Serialization.deserializeMessage(input);
+            if (!message.type.equals("Init")) {
+                logger.error("Expected to receive Init message, but got {}", message.type);
+                continue;
+            }
+            var nodeSpec = SchedulerMessage.NodeSpec.parseFrom(message.payload);
+            var connection = new NodeConnection(
+                socket.getInputStream(), socket.getOutputStream(),
+                nodeSpec,
+                scheduler, new NodeConnectionListener() {
                 @Override
                 public void onClosed(NodeConnection connection) {
                     nodePool.removeNode(connection);
