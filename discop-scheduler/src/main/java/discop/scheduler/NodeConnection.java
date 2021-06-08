@@ -1,7 +1,6 @@
 package discop.scheduler;
 
-import discop.core.Message;
-import discop.core.Serialization;
+import discop.core.RPC;
 import discop.protobuf.msg.SchedulerMessage;
 
 import java.io.IOException;
@@ -50,7 +49,7 @@ class NodeConnection implements Runnable {
 
     void start() throws IOException {
         while (true) {
-            var message = Serialization.deserializeMessage(socketInput);
+            var message = RPC.Serialization.deserializeMessage(socketInput);
             if (message == null) {
                 break;
             }
@@ -62,7 +61,7 @@ class NodeConnection implements Runnable {
         }
     }
 
-    private boolean handleMessage(Message message) throws IOException {
+    private boolean handleMessage(RPC.Message message) throws IOException {
         switch (message.type) {
             case "AllocJob": {
                 var payload = SchedulerMessage.Job.parseFrom(message.payload);
@@ -70,7 +69,8 @@ class NodeConnection implements Runnable {
                 break;
             }
             case "NotifyJobCompleted": {
-                var payload = SchedulerMessage.NotifyJobCompleted.parseFrom(message.payload);
+                var payload = SchedulerMessage.BulkJobUnitCompletion.parseFrom(message.payload);
+                listener.onJobCompleted(this, payload);
             }
             case "EndOfConnection": {
                 return false;
@@ -87,18 +87,27 @@ class NodeConnection implements Runnable {
         scheduler.addJob(payload, nodeId);
     }
 
-    private void sendMessage(Message message) throws IOException {
+    private void sendMessage(RPC.Message message) throws IOException {
         synchronized (socketOutput) {
-            Serialization.serializeMessage(socketOutput, message);
+            RPC.Serialization.serializeMessage(socketOutput, message);
         }
     }
 
     void runJob(SchedulerMessage.Job job) throws IOException {
-        var message = new Message("RunAsyncJob", job.toByteArray());
+        var message = new RPC.Message("RunAsyncJob", job.toByteArray());
+        sendMessage(message);
+    }
+
+    void completeJob(SchedulerMessage.JobCompletion completion) throws IOException {
+        var message = new RPC.Message("CompleteJob", completion.toByteArray());
         sendMessage(message);
     }
 
     public SchedulerMessage.NodeSpec getSpec() {
         return spec;
+    }
+
+    public UUID getNodeId() {
+        return nodeId;
     }
 }

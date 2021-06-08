@@ -6,7 +6,7 @@ plugins {
 dependencies {
     implementation 'org.slf4j:slf4j-log4j12:1.7.21'
     implementation project(':discop-core')
-    implementation files("/workspaces/wasmtime-java/build/libs/wasmtime-java-0.4.0.jar")
+    implementation files("/var/folders/br/7sr_p7cj7v549x_gtkb33df00000gp/T/tmp.fdJgEuzI/wasmtime-java-0.4.0.jar")
 }
 
 mainClassName = 'discop.worker.App'

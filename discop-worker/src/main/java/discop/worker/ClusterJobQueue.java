@@ -1,8 +1,7 @@
 package discop.worker;
 
 import com.google.protobuf.ByteString;
-import discop.core.Message;
-import discop.core.Serialization;
+import discop.core.RPC;
 import discop.protobuf.msg.SchedulerMessage;
 
 import java.io.IOException;
@@ -19,7 +18,7 @@ public class ClusterJobQueue {
         final var job = SchedulerMessage.Job.newBuilder()
                 .setWasmBytes(ByteString.copyFrom(wasmBytes))
                 .addInputs(jobInput).build();
-        final var message = new Message("AllocJob", job.toByteArray());
-        Serialization.serializeMessage(schedulerOutgoing, message);
+        final var message = new RPC.Message("AllocJob", job.toByteArray());
+        RPC.Serialization.serializeMessage(schedulerOutgoing, message);
     }
 }

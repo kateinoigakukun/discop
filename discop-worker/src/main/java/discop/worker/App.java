@@ -1,7 +1,6 @@
 package discop.worker;
 
-import discop.core.Message;
-import discop.core.Serialization;
+import discop.core.RPC;
 import discop.core.TransportConfiguration;
 import discop.protobuf.msg.SchedulerMessage;
 
@@ -21,12 +20,22 @@ public class App {
         }
     }
 
+    static void connectionHandshake(Socket socket) throws IOException {
+        int cores = Runtime.getRuntime().availableProcessors();
+        var initMessage = SchedulerMessage.NodeSpec.newBuilder()
+                .setCoreCount(cores)
+                .build();
+        var message = new RPC.Message("Init", initMessage.toByteArray());
+        RPC.Serialization.serializeMessage(socket.getOutputStream(), message);
+    }
+
     public static void main(String[] args) throws Exception {
         var socket = new Socket("localhost", TransportConfiguration.SCHEDULER_DEFAULT_PORT);
+        connectionHandshake(socket);
         var dispatcher = new JobDispatcher(socket.getOutputStream());
-        var connection = new SchedulerIncomingConnection(socket, dispatcher);
+        var connection = new SchedulerConnection(socket, dispatcher);
         var clusterJobQueue = new ClusterJobQueue(socket.getOutputStream());
-        var server = new HttpApiServer(clusterJobQueue, getApiServerPort());
+        var server = new HttpApiServer(getApiServerPort(), clusterJobQueue, connection);
         new Thread(connection).start();
         new Thread(server).start();
         connection.awaitTermination();

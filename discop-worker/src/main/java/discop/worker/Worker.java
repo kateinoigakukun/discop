@@ -11,14 +11,13 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
-import java.util.Optional;
 
 public class Worker {
     static final String MAIN_MODULE_NAME = "discop_main";
     private final Logger logger = LoggerFactory.getLogger(Worker.class);
 
-    public ArrayList<SchedulerMessage.JobOutput> runJob(SchedulerMessage.Job message) throws IOException {
-        var outputs = new ArrayList<SchedulerMessage.JobOutput>();
+    public ArrayList<SchedulerMessage.JobUnitOutput> runJob(SchedulerMessage.JobUnit message) throws IOException {
+        var outputs = new ArrayList<SchedulerMessage.JobUnitOutput>();
         for (var input : message.getInputsList()) {
             var output = runSingleJob(message, input);
             outputs.add(output);
@@ -27,8 +26,8 @@ public class Worker {
         return outputs;
     }
 
-    private SchedulerMessage.JobOutput runSingleJob(SchedulerMessage.Job job, SchedulerMessage.JobInput input) throws IOException {
-        var args = input.getArgumentsList().toArray(new String[0]);
+    private SchedulerMessage.JobUnitOutput runSingleJob(SchedulerMessage.JobUnit job, SchedulerMessage.JobUnitInput input) throws IOException {
+        var args = input.getInput().getArgumentsList().toArray(new String[0]);
         var stdoutPath = Files.createTempFile("discop-worker-wasi-stdout", "");
         var wasiConfig = new WasiConfig(
                 args, new WasiConfig.PreopenDir[0],
@@ -51,7 +50,9 @@ public class Worker {
             }
             entrypoint.func().call();
             var stdoutContent = Files.readString(stdoutPath);
-            return SchedulerMessage.JobOutput.newBuilder()
+            return SchedulerMessage.JobUnitOutput.newBuilder()
+                    .setJobId(job.getJobId())
+                    .setSegment(input.getSegment())
                     .setStdout(stdoutContent)
                     .setExitCode(0)
                     .build();

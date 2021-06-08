@@ -2,6 +2,9 @@ package discop.scheduler;
 
 import discop.protobuf.msg.SchedulerMessage;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -9,11 +12,51 @@ import java.util.concurrent.LinkedBlockingQueue;
 // Must be thread-safe
 class JobScheduler {
     private final LinkedBlockingQueue<JobUnit> queue;
-    private final ConcurrentHashMap<UUID, JobUnit> executing;
+    // Executing job unit by job id
+    private final ConcurrentHashMap<Long, JobState> executing;
+
+    static class JobState {
+        final JobUnit unit;
+        SchedulerMessage.JobUnitOutput[] outputs;
+        int executingChildJobs;
+
+        JobState(JobUnit unit) {
+            this.unit = unit;
+            var childCount = unit.getOriginal().getInputsCount();
+            this.outputs = new SchedulerMessage.JobUnitOutput[childCount];
+            this.executingChildJobs = childCount;
+        }
+    }
+
+    static class Completion {
+        final SchedulerMessage.JobCompletion message;
+        final JobUnit unit;
+
+        public Completion(SchedulerMessage.JobCompletion message, JobUnit unit) {
+            this.message = message;
+            this.unit = unit;
+        }
+    }
 
     JobScheduler() {
         this.queue = new LinkedBlockingQueue<>();
         this.executing = new ConcurrentHashMap<>();
+    }
+
+    synchronized Optional<Completion>
+    completeChildJob(SchedulerMessage.JobUnitOutput output) {
+        var jobState = executing.get(output.getJobId());
+        jobState.outputs[output.getSegment()] = output;
+        jobState.executingChildJobs -= 1;
+        if (jobState.executingChildJobs == 0) {
+            this.executing.remove(output.getJobId());
+            var message = SchedulerMessage.JobCompletion.newBuilder()
+                    .setJobId(output.getJobId())
+                    .addAllOutputs(Arrays.asList(jobState.outputs))
+                    .build();
+            return Optional.of(new Completion(message, jobState.unit));
+        }
+        return Optional.empty();
     }
 
     void addJob(SchedulerMessage.Job job, UUID producerId) {
@@ -21,6 +64,8 @@ class JobScheduler {
     }
 
     JobUnit nextJob() throws InterruptedException {
-        return queue.take();
+        var job = queue.take();
+        executing.put(job.getOriginal().getJobId(), new JobState(job));
+        return job;
     }
 }

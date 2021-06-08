@@ -1,24 +1,29 @@
 package discop.worker;
 
 
-import discop.core.Message;
-import discop.core.Serialization;
+import discop.core.RPC;
 import discop.protobuf.msg.SchedulerMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.net.Socket;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 
-public class SchedulerIncomingConnection implements Runnable {
+public class SchedulerConnection implements Runnable, JobCompletionPublisher {
     private final Object lock = new Object();
     private boolean terminated = false;
     private final Socket socket;
     private final JobDispatcher listener;
     private final Logger logger = LoggerFactory.getLogger(App.class);
 
-    SchedulerIncomingConnection(Socket socket, JobDispatcher listener) {
+    private final ConcurrentHashMap<Long, Function<SchedulerMessage.JobCompletion, Void>> subscribers;
+
+    SchedulerConnection(Socket socket, JobDispatcher listener) {
         this.socket = socket;
         this.listener = listener;
+        this.subscribers = new ConcurrentHashMap<>();
     }
 
     @Override
@@ -26,7 +31,7 @@ public class SchedulerIncomingConnection implements Runnable {
         try {
             var input = socket.getInputStream();
             while (!socket.isInputShutdown()) {
-                var incoming = Serialization.deserializeMessage(input);
+                var incoming = RPC.Serialization.deserializeMessage(input);
                 if (incoming == null) {
                     logger.error("Failed to deserialize incoming message");
                     break;
@@ -44,18 +49,36 @@ public class SchedulerIncomingConnection implements Runnable {
         }
     }
 
-    void handleMessage(Message message) throws Exception {
+    void sendRequest(RPC.Message message) throws IOException {
+        RPC.Serialization.serializeMessage(socket.getOutputStream(), message);
+    }
+
+    void handleMessage(RPC.Message message) throws Exception {
         switch (message.type) {
+            case "JobAllocated": {
+                var job = SchedulerMessage.JobUnit.parseFrom(message.payload);
+                break;
+            }
             case "RunAsyncJob": {
-                var runJob = SchedulerMessage.Job.parseFrom(message.payload);
+                var runJob = SchedulerMessage.JobUnit.parseFrom(message.payload);
                 listener.dispatch(runJob);
                 break;
+            }
+            case "CompleteJob": {
+                var completion = SchedulerMessage.JobCompletion.parseFrom(message.payload);
+                subscribers.get(completion.getJobId()).apply(completion);
+                subscribers.remove(completion.getJobId());
             }
             default: {
                 logger.warn("Unhandled incoming message \"{}\"", message.type);
                 break;
             }
         }
+    }
+
+    @Override
+    public void subscribe(long jobId, Function<SchedulerMessage.JobCompletion, Void> subscriber) {
+        subscribers.put(jobId, subscriber);
     }
 
     void awaitTermination() throws InterruptedException {

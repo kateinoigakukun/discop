@@ -1,13 +1,20 @@
 package discop.scheduler;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.PriorityBlockingQueue;
 import java.util.stream.Collectors;
 
 // Must be thread-safe
 class NodePool {
-    private final List<NodeState> nodeList = new ArrayList<>();
+    private final PriorityBlockingQueue<NodeState> nodeList;
+    private final ConcurrentHashMap<UUID, NodeState> nodeById;
     private static final double MAX_WORK_LOAD = 10;
+    private final Logger logger = LoggerFactory.getLogger(NodePool.class);
 
     static class NodeState {
         final NodeConnection connection;
@@ -27,31 +34,42 @@ class NodePool {
         }
     }
 
+    NodePool() {
+        this.nodeList = new PriorityBlockingQueue<>(1, Comparator.comparingDouble(NodeState::getWorkLoad));
+        this.nodeById = new ConcurrentHashMap<>();
+    }
+
     void addNode(NodeConnection connection) {
-        this.nodeList.add(new NodeState(connection));
+        var state = new NodeState(connection);
+        this.nodeById.put(connection.getNodeId(), state);
+        this.nodeList.add(state);
+        logger.info("New node joined our cluster: {}", connection.getNodeId());
     }
 
     void removeNode(NodeConnection connection) {
         this.nodeList.removeIf((nodeState -> nodeState.connection == connection));
     }
 
-    synchronized void completePartialJob() {
-        
+    NodeConnection getConnection(UUID id) {
+        return nodeById.get(id).connection;
     }
-    synchronized int assignJob(JobUnit unit) throws IOException {
+
+    synchronized void completeChildJob(NodeConnection connection) {
+        var state = nodeById.get(connection.getNodeId());
+        state.executingJobs -= 1;
+    }
+
+    synchronized void assignJob(JobUnit unit) throws IOException {
         var assigned = 0;
-        var partialJobCount = unit.getOriginal().getInputsCount();
+        var childJobCount = unit.getOriginal().getInputsCount();
         var inputList = unit.getOriginal().getInputsList();
-        var sortedNode = nodeList.stream()
-                .sorted(Comparator.comparingDouble(NodeState::getWorkLoad))
-                .collect(Collectors.toList());
-        for (var nodeState : sortedNode) {
-            if (nodeState.getWorkLoad() >= MAX_WORK_LOAD) {
-                return partialJobCount - assigned;
-            }
+        var nodeCount = nodeList.size();
+        while (assigned < childJobCount) {
+            var nodeState = nodeList.poll();
+            if (nodeState == null) throw new RuntimeException("not enough node");
             int acceptableJobs = Integer.min(
-                    partialJobCount - assigned,
-                    (int) (nodeState.getCoreCount() * MAX_WORK_LOAD - nodeState.executingJobs)
+                    childJobCount - assigned,
+                    childJobCount / nodeCount
             );
             var assignedInputs = inputList.subList(assigned, assigned + acceptableJobs);
             assigned += acceptableJobs;
@@ -61,7 +79,7 @@ class NodePool {
             jobBuilder.clearInputs();
             jobBuilder.addAllInputs(assignedInputs);
             nodeState.connection.runJob(jobBuilder.build());
+            nodeList.put(nodeState);
         }
-        return partialJobCount - assigned;
     }
 }

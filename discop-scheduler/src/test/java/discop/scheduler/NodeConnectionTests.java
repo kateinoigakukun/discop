@@ -1,7 +1,6 @@
 package discop.scheduler;
 
-import discop.core.Message;
-import discop.core.Serialization;
+import discop.core.RPC;
 import discop.protobuf.msg.SchedulerMessage;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -16,8 +15,9 @@ public class NodeConnectionTests {
 
     static class NopListener implements NodeConnectionListener {
         @Override
-        public void onJobCompleted(NodeConnection connection, SchedulerMessage.JobOutput output) {
+        public void onJobCompleted(NodeConnection connection, SchedulerMessage.BulkJobUnitCompletion completion) {
         }
+
         @Override
         public void onClosed(NodeConnection connection) {}
     }
@@ -32,19 +32,19 @@ public class NodeConnectionTests {
         final var bytes = output.toByteArray();
         Assertions.assertNotEquals(bytes.length, 0);
 
-        final var outgoing = Serialization.deserializeMessage(new ByteArrayInputStream(output.toByteArray()));
+        final var outgoing = RPC.Serialization.deserializeMessage(new ByteArrayInputStream(output.toByteArray()));
         Assertions.assertEquals(outgoing.type, "RunAsyncJob");
     }
 
     @Test
     void handleAllocJob() throws Exception {
         final var job = SchedulerMessage.Job.newBuilder().build();
-        final var message = new Message("AllocJob", job.toByteArray());
+        final var message = new RPC.Message("AllocJob", job.toByteArray());
         final var messageOutput = new ByteArrayOutputStream();
-        Serialization.serializeMessage(messageOutput, message);
+        RPC.Serialization.serializeMessage(messageOutput, message);
 
-        final var eocMessage = new Message("EndOfConnection", new byte[]{});
-        Serialization.serializeMessage(messageOutput, eocMessage);
+        final var eocMessage = new RPC.Message("EndOfConnection", new byte[]{});
+        RPC.Serialization.serializeMessage(messageOutput, eocMessage);
 
         final var scheduler = new JobScheduler();
         final var input = new ByteArrayInputStream(messageOutput.toByteArray());

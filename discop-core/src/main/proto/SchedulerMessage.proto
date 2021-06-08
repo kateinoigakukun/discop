@@ -10,9 +10,16 @@ message JobInput {
     repeated string arguments = 1;
 }
 
-message JobOutput {
-    string stdout = 1;
-    int32 exit_code = 2;
+message JobUnitInput {
+    uint32 segment = 1;
+    JobInput input = 2;
+}
+
+message JobUnitOutput {
+    uint64 job_id = 1;
+    string stdout = 2;
+    int32 exit_code = 3;
+    uint32 segment = 4;
 }
 
 message Ack {}
@@ -20,15 +27,24 @@ message Ack {}
 message Job {
     uint64 job_id = 1;
     bytes wasm_bytes = 2;
-    uint64 segment_index = 3;
-    repeated JobInput inputs = 4;
+    repeated JobInput inputs = 3;
+}
+
+message JobUnit {
+    uint64 job_id = 1;
+    bytes wasm_bytes = 2;
+    repeated JobUnitInput inputs = 3;
 }
 
 message GetJobStatus {
     uint64 job_id = 1;
 }
 
-message NotifyJobCompleted {
+message BulkJobUnitCompletion {
+    repeated JobUnitOutput outputs = 1;
+}
+
+message JobCompletion {
     uint64 job_id = 1;
-    repeated JobOutput outputs = 2;
+    repeated JobUnitOutput outputs = 2;
 }

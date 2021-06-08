@@ -2,8 +2,7 @@ package discop.cli;
 
 
 import com.google.protobuf.ByteString;
-import discop.core.Message;
-import discop.core.Serialization;
+import discop.core.RPC;
 import discop.core.TransportConfiguration;
 import discop.protobuf.msg.ClusterMessage;
 import discop.protobuf.msg.SchedulerMessage;
@@ -38,15 +37,15 @@ public class Client {
         final var job = SchedulerMessage.Job.newBuilder()
                 .setWasmBytes(ByteString.copyFrom(wasmBytes))
                 .addInputs(jobInput).build();
-        final var message = new Message("AllocJob", job.toByteArray());
+        final var message = new RPC.Message("AllocJob", job.toByteArray());
         var socket = new Socket("localhost", TransportConfiguration.SCHEDULER_DEFAULT_PORT);
-        Serialization.serializeMessage(socket.getOutputStream(), message);
+        RPC.Serialization.serializeMessage(socket.getOutputStream(), message);
         var input = socket.getInputStream();
         while (true) {
-            var incoming = Serialization.deserializeMessage(input);
+            var incoming = RPC.Serialization.deserializeMessage(input);
             if (incoming == null) continue;
             System.out.println(incoming.type);
-            var runJob = SchedulerMessage.Job.parseFrom(incoming.payload);
+            var runJob = SchedulerMessage.JobUnit.parseFrom(incoming.payload);
             var worker = new Worker();
             worker.runJob(runJob);
             break;
