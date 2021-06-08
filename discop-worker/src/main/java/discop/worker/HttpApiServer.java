@@ -1,6 +1,10 @@
 package discop.worker;
 
+import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.stream.JsonReader;
+import com.google.protobuf.ByteString;
 import com.sun.net.httpserver.Filter;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
@@ -9,14 +13,35 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.InetSocketAddress;
+import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.stream.Collectors;
 
 public class HttpApiServer implements Runnable {
     private HttpServer server;
     private final ClusterJobQueue jobQueue;
     private final JobCompletionPublisher publisher;
+    private final ProgramStorage programStorage = new ProgramStorage();
     private final Logger logger = LoggerFactory.getLogger(HttpApiServer.class);
+    private final Gson gson = new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create();
     private final int port;
+
+    static class ProgramStorage {
+        private long nextProgramId = 0;
+        private final HashMap<Long, ByteString> programById = new HashMap<>();
+
+        synchronized long add(byte[] program) {
+            nextProgramId += 1;
+            programById.put(nextProgramId, ByteString.copyFrom(program));
+            return nextProgramId;
+        }
+
+        ByteString get(long id) {
+            return programById.get(id);
+        }
+    }
 
     HttpApiServer(int port, ClusterJobQueue jobQueue, JobCompletionPublisher publisher) {
         this.port = port;
@@ -49,6 +74,8 @@ public class HttpApiServer implements Runnable {
             };
 
             server = HttpServer.create(addr, 0);
+            server.createContext("/upload_program", this::handleUploadProgram)
+                    .getFilters().add(loggerFilter);
             server.createContext("/run_job", this::handleRunJob)
                     .getFilters().add(loggerFilter);
             server.start();
@@ -57,9 +84,35 @@ public class HttpApiServer implements Runnable {
         }
     }
 
-    private void handleRunJob(HttpExchange exchange) throws IOException {
+    private void handleUploadProgram(HttpExchange exchange) throws IOException {
         byte[] wasmBytes = exchange.getRequestBody().readAllBytes();
-        jobQueue.addJob(wasmBytes, jobId -> {
+        var id = programStorage.add(wasmBytes);
+
+        var headers = exchange.getResponseHeaders();
+        headers.set("Content-Type", "application/json");
+        exchange.sendResponseHeaders(200, 0);
+
+        var response = new HttpEndpoint.UploadProgramResponse(id);
+        var json = gson.toJson(response);
+        var os = exchange.getResponseBody();
+        os.write(json.getBytes());
+        os.close();
+    }
+
+    private void handleRunJob(HttpExchange exchange) throws IOException {
+        var jsonReader = new JsonReader(new InputStreamReader(exchange.getRequestBody(), StandardCharsets.UTF_8));
+        HttpEndpoint.RunJobRequest request = gson.fromJson(jsonReader, HttpEndpoint.RunJobRequest.class);
+        var inputs = request.inputs.stream().map(jobInput -> {
+            return SchedulerMessage.JobInput.newBuilder().addAllArguments(jobInput.arguments).build();
+        }).collect(Collectors.toList());
+
+        ByteString wasmBytes = programStorage.get(request.programId);
+        if (wasmBytes == null) {
+            logger.error("No program found for id {}", request.programId);
+            exchange.sendResponseHeaders(500, 0);
+            return;
+        }
+        jobQueue.addJob(wasmBytes, inputs, jobId -> {
             publisher.subscribe(jobId, completion -> {
                 try {
                     if (completion == null) {
@@ -83,7 +136,6 @@ public class HttpApiServer implements Runnable {
     }
 
     private String buildRunJobResponse(SchedulerMessage.JobCompletion completion) {
-        var gson = new Gson();
         return gson.toJson(completion);
     }
 

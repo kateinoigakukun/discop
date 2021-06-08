@@ -17,11 +17,11 @@ public class ClusterJobQueue {
         this.connection = connection;
     }
 
-    void addJob(byte[] wasmBytes, Function<Long, Void> completion) throws IOException {
-        final var jobInput = SchedulerMessage.JobInput.newBuilder().build();
+    void addJob(ByteString wasmBytes, Iterable<SchedulerMessage.JobInput> inputs, Function<Long, Void> completion) throws IOException {
         final var job = SchedulerMessage.Job.newBuilder()
-                .setWasmBytes(ByteString.copyFrom(wasmBytes))
-                .addInputs(jobInput).build();
+                .setWasmBytes(wasmBytes)
+                .addAllInputs(inputs)
+                .build();
         final var message = RPC.Message.makeRequest(RPC.RequestType.AllocJob, job.toByteArray());
         connection.sendRequest(message, response -> {
             if (RPC.ResponseType.valueOf(response.subtype) == RPC.ResponseType.JobAllocated) {
