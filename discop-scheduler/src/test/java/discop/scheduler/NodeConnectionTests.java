@@ -33,17 +33,18 @@ public class NodeConnectionTests {
         Assertions.assertNotEquals(bytes.length, 0);
 
         final var outgoing = RPC.Serialization.deserializeMessage(new ByteArrayInputStream(output.toByteArray()));
-        Assertions.assertEquals(outgoing.type, "RunAsyncJob");
+        Assertions.assertNotNull(outgoing);
+        Assertions.assertEquals(outgoing.subtype, "RunAsyncJob");
     }
 
     @Test
     void handleAllocJob() throws Exception {
         final var job = SchedulerMessage.Job.newBuilder().build();
-        final var message = new RPC.Message(RPC.MessageType.AllocJob, job.toByteArray());
+        final var message = RPC.Message.makeRequest(RPC.RequestType.AllocJob, job.toByteArray());
         final var messageOutput = new ByteArrayOutputStream();
         RPC.Serialization.serializeMessage(messageOutput, message);
 
-        final var eocMessage = new RPC.Message(RPC.MessageType.EndOfConnection, new byte[]{});
+        final var eocMessage = RPC.Message.makeNotification(RPC.NotificationType.EndOfConnection, new byte[]{});
         RPC.Serialization.serializeMessage(messageOutput, eocMessage);
 
         final var scheduler = new JobScheduler();

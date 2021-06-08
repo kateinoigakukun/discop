@@ -18,7 +18,8 @@ public class ClusterJobQueue {
         final var job = SchedulerMessage.Job.newBuilder()
                 .setWasmBytes(ByteString.copyFrom(wasmBytes))
                 .addInputs(jobInput).build();
-        final var message = new RPC.Message(RPC.MessageType.AllocJob, job.toByteArray());
+        final var message = RPC.Message.makeRequest(RPC.RequestType.AllocJob, job.toByteArray());
+
         RPC.Serialization.serializeMessage(schedulerOutgoing, message);
     }
 }

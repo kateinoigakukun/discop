@@ -25,7 +25,7 @@ public class App {
         var initMessage = SchedulerMessage.NodeSpec.newBuilder()
                 .setCoreCount(cores)
                 .build();
-        var message = new RPC.Message(RPC.MessageType.Init, initMessage.toByteArray());
+        var message = RPC.Message.makeNotification(RPC.NotificationType.Init, initMessage.toByteArray());
         RPC.Serialization.serializeMessage(socket.getOutputStream(), message);
     }
 

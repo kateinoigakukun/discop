@@ -2,11 +2,14 @@ package discop.scheduler;
 
 import discop.core.RPC;
 import discop.protobuf.msg.SchedulerMessage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.UUID;
+import java.util.function.Function;
 
 class NodeConnection implements Runnable {
     private final InputStream socketInput;
@@ -15,6 +18,7 @@ class NodeConnection implements Runnable {
     private final NodeConnectionListener listener;
     private final UUID nodeId;
     private final SchedulerMessage.NodeSpec spec;
+    private final Logger logger = LoggerFactory.getLogger(NodeConnection.class);
 
     NodeConnection(InputStream socketInput, OutputStream socketOutput,
                    SchedulerMessage.NodeSpec spec,
@@ -63,43 +67,68 @@ class NodeConnection implements Runnable {
 
     private boolean handleMessage(RPC.Message message) throws IOException {
         switch (message.type) {
-            case "AllocJob": {
-                var payload = SchedulerMessage.Job.parseFrom(message.payload);
-                allocJob(payload);
-                break;
+            case Notification -> {
+                return handleNotification(message, RPC.NotificationType.valueOf(message.subtype));
             }
-            case "NotifyJobCompleted": {
-                var payload = SchedulerMessage.BulkJobUnitCompletion.parseFrom(message.payload);
-                listener.onJobCompleted(this, payload);
-            }
-            case "EndOfConnection": {
-                return false;
-            }
-            default: {
-                System.err.printf("Unhandled method: %s\n", message.type);
-                break;
+            case Request -> handleRequest(message, RPC.RequestType.valueOf(message.subtype), replyMessage -> {
+                sendMessage(replyMessage);
+                return null;
+            });
+            case Response -> {
+                logger.error("Response handling is not implemented yet");
             }
         }
         return true;
     }
 
-    private void allocJob(SchedulerMessage.Job payload) {
-        scheduler.addJob(payload, nodeId);
+    private boolean handleNotification(RPC.Message message, RPC.NotificationType notificationType) throws IOException {
+        switch (notificationType) {
+            case NotifyJobCompleted: {
+                var payload = SchedulerMessage.BulkJobUnitCompletion.parseFrom(message.payload);
+                listener.onJobCompleted(this, payload);
+                break;
+            }
+            case EndOfConnection:
+                return false;
+            default: {
+                logger.warn("Unhandled notification: {}", notificationType);
+            }
+        }
+        return true;
     }
 
-    private void sendMessage(RPC.Message message) throws IOException {
+    private void handleRequest(RPC.Message message, RPC.RequestType requestType,
+                               Function<RPC.Message, Void> reply) throws IOException {
+        switch (requestType) {
+            case AllocJob: {
+                var payload = SchedulerMessage.Job.parseFrom(message.payload);
+                var allocated = scheduler.addJob(payload, nodeId);
+                var replyMessage = RPC.Message.makeResponse(RPC.ResponseType.JobAllocated, allocated.toByteArray());
+                reply.apply(replyMessage);
+                break;
+            }
+            default: {
+            }
+        }
+    }
+
+    private void sendMessage(RPC.Message message) {
         synchronized (socketOutput) {
-            RPC.Serialization.serializeMessage(socketOutput, message);
+            try {
+                RPC.Serialization.serializeMessage(socketOutput, message);
+            } catch (IOException e) {
+                logger.error("Failed to send message to node {}: {}", nodeId, e.toString());
+            }
         }
     }
 
     void runJob(SchedulerMessage.Job job) throws IOException {
-        var message = new RPC.Message(RPC.MessageType.RunAsyncJob, job.toByteArray());
+        var message = RPC.Message.makeNotification(RPC.NotificationType.RunAsyncJob, job.toByteArray());
         sendMessage(message);
     }
 
     void completeJob(SchedulerMessage.JobCompletion completion) throws IOException {
-        var message = new RPC.Message(RPC.MessageType.CompleteJob, completion.toByteArray());
+        var message = RPC.Message.makeNotification(RPC.NotificationType.CompleteJob, completion.toByteArray());
         sendMessage(message);
     }
 

@@ -53,18 +53,22 @@ public class SchedulerConnection implements Runnable, JobCompletionPublisher {
         RPC.Serialization.serializeMessage(socket.getOutputStream(), message);
     }
 
-    void handleMessage(RPC.Message message) throws Exception {
+    private void handleMessage(RPC.Message message) throws Exception {
         switch (message.type) {
-            case "JobAllocated": {
-                var job = SchedulerMessage.JobUnit.parseFrom(message.payload);
-                break;
-            }
-            case "RunAsyncJob": {
+            case Notification -> handleNotification(message, RPC.NotificationType.valueOf(message.subtype));
+            case Request -> logger.error("Request handling is not implemented yet");
+            case Response -> handleResponse(message, RPC.ResponseType.valueOf(message.subtype));
+        }
+    }
+
+    private void handleNotification(RPC.Message message, RPC.NotificationType notificationType) throws IOException {
+        switch (notificationType) {
+            case RunAsyncJob: {
                 var runJob = SchedulerMessage.JobUnit.parseFrom(message.payload);
                 listener.dispatch(runJob);
                 break;
             }
-            case "CompleteJob": {
+            case CompleteJob: {
                 var completion = SchedulerMessage.JobCompletion.parseFrom(message.payload);
                 subscribers.get(completion.getJobId()).apply(completion);
                 subscribers.remove(completion.getJobId());
@@ -72,6 +76,17 @@ public class SchedulerConnection implements Runnable, JobCompletionPublisher {
             default: {
                 logger.warn("Unhandled incoming message \"{}\"", message.type);
                 break;
+            }
+        }
+    }
+
+    private void handleResponse(RPC.Message message, RPC.ResponseType responseType) throws IOException {
+        switch (responseType) {
+            case JobAllocated: {
+                var job = SchedulerMessage.JobUnit.parseFrom(message.payload);
+                break;
+            }
+            default: {
             }
         }
     }

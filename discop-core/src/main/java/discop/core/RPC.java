@@ -23,48 +23,85 @@ public class RPC {
     }
 
     public enum MessageType {
+        // Notification doesn't expect reply
+        Notification,
+        // Request and Response should be paired and they should be sequential
+        Request,
+        Response,
+    }
+    public enum NotificationType {
         // Worker Notification
         Init,
-        // Worker Request
-        AllocJob,
+        NotifyJobCompleted,
         EndOfConnection,
         // Scheduler Notification
-        NotifyJobCompleted,
+        CompleteJob,
+        RunAsyncJob,
+    }
+
+    public enum RequestType {
+        // Worker Request
+        AllocJob,
+    }
+
+    public enum ResponseType {
         // Scheduler Response
         JobAllocated,
-        RunAsyncJob,
-        CompleteJob,
     }
 
     public static class Message {
-        public String type;
+        public MessageType type;
+        public String subtype;
         public byte[] payload;
 
-        public Message(MessageType type, byte[] payload) {
-            this.type = type.toString();
+        private Message(MessageType type, String subtype, byte[] payload) {
+            this.type = type;
+            this.subtype = subtype;
             this.payload = payload;
+        }
+        public static Message makeResponse(ResponseType type, byte[] payload) {
+            return new Message(MessageType.Response, type.toString(), payload);
+        }
+        public static Message makeRequest(RequestType type, byte[] payload) {
+            return new Message(MessageType.Request, type.toString(), payload);
+        }
+        public static Message makeNotification(NotificationType type, byte[] payload) {
+            return new Message(MessageType.Notification, type.toString(), payload);
         }
     }
 
     public static class Serialization {
+        private static void serializeString(OutputStream os, String str) throws IOException {
+            os.write(str.length());
+            os.write(str.getBytes());
+        }
         public static void serializeMessage(OutputStream os, Message message) throws IOException {
             var output = new ByteArrayOutputStream();
-            output.write(message.type.length());
-            output.write(message.type.getBytes());
+            serializeString(output, message.type.toString());
+            serializeString(output, message.subtype);
             output.writeBytes(intToBytes(message.payload.length));
             output.write(message.payload);
             os.write(output.toByteArray());
         }
 
+        private static String deserializeString(InputStream source) throws IOException {
+            var length = source.read();
+            if (length < 0) return null;
+            var chars = source.readNBytes(length);
+            return new String(chars);
+        }
         public static Message deserializeMessage(InputStream source) throws IOException {
-            var typeLength = source.read();
-            if (typeLength < 0) return null;
-            var typeChars = source.readNBytes(typeLength);
-            var type = MessageType.valueOf(new String(typeChars));
+            var typeString = deserializeString(source);
+            if (typeString == null) return null;
+            var type = MessageType.valueOf(typeString);
+
+            var subtypeString = deserializeString(source);
+            if (subtypeString == null) return null;
+
             var payloadLength = bytesToInt(source.readNBytes(4));
             if (payloadLength < 0) return null;
             var payload = source.readNBytes(payloadLength);
-            return new Message(type, payload);
+            return new Message(type, subtypeString, payload);
         }
     }
 }

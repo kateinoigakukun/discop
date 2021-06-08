@@ -15,6 +15,8 @@ class JobScheduler {
     // Executing job unit by job id
     private final ConcurrentHashMap<Long, JobState> executing;
 
+    private long _nextJobId = 0;
+
     static class JobState {
         final JobUnit unit;
         SchedulerMessage.JobUnitOutput[] outputs;
@@ -59,13 +61,20 @@ class JobScheduler {
         return Optional.empty();
     }
 
-    void addJob(SchedulerMessage.Job job, UUID producerId) {
-        queue.add(new JobUnit(job, producerId));
+    SchedulerMessage.Job addJob(SchedulerMessage.Job job, UUID producerId) {
+        var allocated = job.toBuilder().setJobId(nextJobId()).build();
+        queue.add(new JobUnit(allocated, producerId));
+        return allocated;
     }
 
     JobUnit nextJob() throws InterruptedException {
         var job = queue.take();
         executing.put(job.getOriginal().getJobId(), new JobState(job));
         return job;
+    }
+
+    private long nextJobId() {
+        _nextJobId += 1;
+        return _nextJobId;
     }
 }
