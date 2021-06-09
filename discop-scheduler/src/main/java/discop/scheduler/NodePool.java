@@ -60,7 +60,11 @@ class NodePool {
         state.executingJobs -= 1;
     }
 
-    synchronized void assignJob(JobUnit unit) throws IOException {
+    interface JobAssigner {
+        void assignJobToNode(NodeConnection connection, SchedulerMessage.JobUnit unit) throws IOException;
+    }
+
+    synchronized void assignJob(JobUnit unit, JobAssigner assigner) throws IOException {
         var assigned = 0;
         var childJobCount = unit.getOriginal().getInputsCount();
         var inputList = unit.getOriginal().getInputsList();
@@ -87,7 +91,7 @@ class NodePool {
                         .setSegment(assignedSegmentStart + segmentOffset);
                 jobBuilder.addInputs(unitInput);
             }
-            nodeState.connection.runJob(jobBuilder.build());
+            assigner.assignJobToNode(nodeState.connection, jobBuilder.build());
             nodeList.put(nodeState);
         }
     }
