@@ -110,6 +110,7 @@ public class HttpApiServer implements Runnable {
         if (wasmBytes == null) {
             logger.error("No program found for id {}", request.programId);
             exchange.sendResponseHeaders(500, 0);
+            exchange.getResponseBody().close();
             return;
         }
         jobQueue.addJob(wasmBytes, inputs, jobId -> {
@@ -117,6 +118,7 @@ public class HttpApiServer implements Runnable {
                 try {
                     if (completion == null) {
                         exchange.sendResponseHeaders(500, 0);
+                        exchange.getResponseBody().close();
                         return null;
                     }
                     var headers = exchange.getResponseHeaders();

@@ -21,5 +21,9 @@ public class JobUnit {
     public SchedulerMessage.Job getOriginal() {
         return original;
     }
+
+    public long getJobId() {
+        return original.getJobId();
+    }
 }
 

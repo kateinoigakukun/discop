@@ -103,11 +103,11 @@ class NodeConnection implements Runnable {
         switch (requestType) {
             case AllocJob: {
                 var payload = SchedulerMessage.Job.parseFrom(message.payload);
-                var allocated = scheduler.allocJob(payload);
-                var replyMessage = RPC.Message.makeResponse(RPC.ResponseType.JobAllocated, allocated.toByteArray());
+                var allocated = scheduler.allocJob(payload, nodeId);
+                var replyMessage = RPC.Message.makeResponse(RPC.ResponseType.JobAllocated, allocated.getOriginal().toByteArray());
                 logger.debug("Allocate a new job in scheduler id={}", allocated.getJobId());
                 reply.apply(replyMessage);
-                scheduler.addJob(allocated, nodeId);
+                scheduler.addJob(allocated);
                 break;
             }
             default: {
@@ -126,7 +126,7 @@ class NodeConnection implements Runnable {
         }
     }
 
-    void runJob(SchedulerMessage.Job job) throws IOException {
+    void runJob(SchedulerMessage.JobUnit job) throws IOException {
         var message = RPC.Message.makeNotification(RPC.NotificationType.RunAsyncJob, job.toByteArray());
         sendMessage(message);
     }

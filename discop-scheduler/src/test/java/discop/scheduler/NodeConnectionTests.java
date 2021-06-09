@@ -27,7 +27,7 @@ public class NodeConnectionTests {
         final var input = new ByteArrayInputStream(new byte[]{});
         final var output = new ByteArrayOutputStream();
         final var connection = new NodeConnection(input, output, nodeSpec, scheduler, new NopListener());
-        final var job = SchedulerMessage.Job.newBuilder().build();
+        final var job = SchedulerMessage.JobUnit.newBuilder().build();
         connection.runJob(job);
         final var bytes = output.toByteArray();
         Assertions.assertNotEquals(bytes.length, 0);

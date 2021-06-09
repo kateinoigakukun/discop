@@ -1,5 +1,6 @@
 package discop.scheduler;
 
+import discop.protobuf.msg.SchedulerMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -71,13 +72,21 @@ class NodePool {
                     childJobCount - assigned,
                     childJobCount / nodeCount
             );
+            var assignedSegmentStart = assigned;
             var assignedInputs = inputList.subList(assigned, assigned + acceptableJobs);
             assigned += acceptableJobs;
             nodeState.executingJobs += acceptableJobs;
 
-            var jobBuilder = unit.getOriginal().toBuilder();
-            jobBuilder.clearInputs();
-            jobBuilder.addAllInputs(assignedInputs);
+            var jobBuilder = SchedulerMessage.JobUnit.newBuilder()
+                    .setJobId(unit.getJobId())
+                    .setWasmBytes(unit.getOriginal().getWasmBytes());
+            for (var segmentOffset = 0; segmentOffset < assignedInputs.size(); segmentOffset++) {
+                var input = assignedInputs.get(segmentOffset);
+                var unitInput = SchedulerMessage.JobUnitInput.newBuilder()
+                        .setInput(input)
+                        .setSegment(assignedSegmentStart + segmentOffset);
+                jobBuilder.addInputs(unitInput);
+            }
             nodeState.connection.runJob(jobBuilder.build());
             nodeList.put(nodeState);
         }

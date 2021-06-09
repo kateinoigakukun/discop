@@ -1,9 +1,11 @@
 package discop.scheduler;
 
 import discop.protobuf.msg.SchedulerMessage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -14,6 +16,7 @@ class JobScheduler {
     private final LinkedBlockingQueue<JobUnit> queue;
     // Executing job unit by job id
     private final ConcurrentHashMap<Long, JobState> executing;
+    private final Logger logger = LoggerFactory.getLogger(JobScheduler.class);
 
     private long _nextJobId = 0;
 
@@ -48,6 +51,10 @@ class JobScheduler {
     synchronized Optional<Completion>
     completeChildJob(SchedulerMessage.JobUnitOutput output) {
         var jobState = executing.get(output.getJobId());
+        if (jobState.outputs[output.getSegment()] != null) {
+            logger.error("Tried to complete already completed job segment={}", output.getSegment());
+            return Optional.empty();
+        }
         jobState.outputs[output.getSegment()] = output;
         jobState.executingChildJobs -= 1;
         if (jobState.executingChildJobs == 0) {
@@ -61,12 +68,13 @@ class JobScheduler {
         return Optional.empty();
     }
 
-    SchedulerMessage.Job allocJob(SchedulerMessage.Job job) {
-        return job.toBuilder().setJobId(nextJobId()).build();
+    JobUnit allocJob(SchedulerMessage.Job job, UUID producerId) {
+        var newJob = job.toBuilder().setJobId(nextJobId()).build();
+        return new JobUnit(newJob, producerId);
     }
 
-    void addJob(SchedulerMessage.Job job, UUID producerId) {
-        queue.add(new JobUnit(job, producerId));
+    void addJob(JobUnit job) {
+        queue.add(job);
     }
 
     JobUnit nextJob() throws InterruptedException {

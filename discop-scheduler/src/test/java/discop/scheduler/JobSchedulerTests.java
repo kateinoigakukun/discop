@@ -12,7 +12,8 @@ public class JobSchedulerTests {
     @Test
     void addJob() throws Exception {
         final var job = SchedulerMessage.Job.newBuilder().build();
-        scheduler.addJob(job, UUID.randomUUID());
+        final var unit = scheduler.allocJob(job, UUID.randomUUID());
+        scheduler.addJob(unit);
         Assertions.assertNotNull(scheduler.nextJob());
     }
 }
