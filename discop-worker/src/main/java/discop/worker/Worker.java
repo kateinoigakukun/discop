@@ -11,22 +11,25 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.concurrent.Callable;
 
-public class Worker {
+public class Worker implements Callable<SchedulerMessage.JobUnitOutput> {
     static final String MAIN_MODULE_NAME = "discop_main";
     private final Logger logger = LoggerFactory.getLogger(Worker.class);
+    SchedulerMessage.JobUnit job;
+    SchedulerMessage.JobUnitInput input;
 
-    public ArrayList<SchedulerMessage.JobUnitOutput> runJob(SchedulerMessage.JobUnit message) throws IOException {
-        var outputs = new ArrayList<SchedulerMessage.JobUnitOutput>();
-        for (var input : message.getInputsList()) {
-            var output = runSingleJob(message, input);
-            outputs.add(output);
-            logger.info("Job completed: stdout={}, exitCode={}", output.getStdout(), output.getExitCode());
-        }
-        return outputs;
+    public Worker(SchedulerMessage.JobUnit job, SchedulerMessage.JobUnitInput input) {
+        this.job = job;
+        this.input = input;
     }
 
-    private SchedulerMessage.JobUnitOutput runSingleJob(SchedulerMessage.JobUnit job, SchedulerMessage.JobUnitInput input) throws IOException {
+    @Override
+    public SchedulerMessage.JobUnitOutput call() throws Exception {
+        return runSingleJob();
+    }
+
+    SchedulerMessage.JobUnitOutput runSingleJob() throws IOException {
         var args = input.getInput().getArgumentsList().toArray(new String[0]);
         var stdoutPath = Files.createTempFile("discop-worker-wasi-stdout", "");
         var wasiConfig = new WasiConfig(

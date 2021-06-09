@@ -20,8 +20,7 @@ public class App {
         }
     }
 
-    static void connectionHandshake(Socket socket) throws IOException {
-        int cores = Runtime.getRuntime().availableProcessors();
+    static void connectionHandshake(Socket socket, int cores) throws IOException {
         var initMessage = SchedulerMessage.NodeSpec.newBuilder()
                 .setCoreCount(cores)
                 .build();
@@ -30,9 +29,10 @@ public class App {
     }
 
     public static void main(String[] args) throws Exception {
+        int cores = Runtime.getRuntime().availableProcessors();
         var socket = new Socket("localhost", TransportConfiguration.SCHEDULER_DEFAULT_PORT);
-        connectionHandshake(socket);
-        var dispatcher = new JobDispatcher(socket.getOutputStream());
+        connectionHandshake(socket, cores);
+        var dispatcher = new JobDispatcher(socket.getOutputStream(), cores);
         var connection = new SchedulerConnection(socket, dispatcher);
         var clusterJobQueue = new ClusterJobQueue(connection);
         var server = new HttpApiServer(getApiServerPort(), clusterJobQueue, connection);
