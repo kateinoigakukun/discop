@@ -4,9 +4,9 @@ import java.util.ArrayList;
 
 public class HttpEndpoint {
     static class UploadProgramResponse {
-        long programId;
+        Long programId;
 
-        public UploadProgramResponse(long programId) {
+        public UploadProgramResponse(Long programId) {
             this.programId = programId;
         }
     }
@@ -14,7 +14,7 @@ public class HttpEndpoint {
         ArrayList<String> arguments;
     }
     static class RunJobRequest {
-        long programId;
+        Long programId;
         ArrayList<JobInput> inputs;
     }
 }

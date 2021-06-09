@@ -39,7 +39,7 @@ public class SchedulerConnection implements Runnable, JobCompletionPublisher {
                     logger.error("Failed to deserialize incoming message");
                     break;
                 }
-                logger.debug("Received incoming message \"{}\"", incoming.type);
+                logger.debug("Received incoming message \"{}/{}\"", incoming.type, incoming.subtype);
                 handleMessage(incoming);
             }
         } catch (Exception e) {
