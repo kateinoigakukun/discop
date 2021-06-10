@@ -51,13 +51,19 @@ public class Worker implements Callable<SchedulerMessage.JobUnitOutput> {
             if (entrypoint.type() != Extern.Type.FUNC) {
                 throw new RuntimeException("Expected \"_start\" to be a function");
             }
-            entrypoint.func().call();
+
+            var exitCode = 0;
+            try {
+                entrypoint.func().call();
+            } catch (TrapException e) {
+                exitCode = e.trap().exitCode();
+            }
             var stdoutContent = Files.readString(stdoutPath);
             return SchedulerMessage.JobUnitOutput.newBuilder()
                     .setJobId(job.getJobId())
                     .setSegment(input.getSegment())
                     .setStdout(stdoutContent)
-                    .setExitCode(0)
+                    .setExitCode(exitCode)
                     .build();
         }
     }
