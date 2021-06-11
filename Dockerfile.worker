@@ -1,0 +1,3 @@
+FROM openjdk:15
+COPY ./discop-worker/build/libs/discop-worker-all.jar /discop-worker-all.jar
+ENTRYPOINT ["java", "-jar", "/discop-worker-all.jar"]
