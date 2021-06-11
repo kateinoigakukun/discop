@@ -1,3 +1,10 @@
+FROM gradle:7-jdk16 as builder
+
+ADD . /src
+WORKDIR /src
+
+RUN ./gradlew :discop-worker:shadowJar
+
 FROM openjdk:15
-COPY ./discop-worker/build/libs/discop-worker-all.jar /discop-worker-all.jar
+COPY --from=builder src/discop-worker/build/libs/discop-worker-all.jar /discop-worker-all.jar
 ENTRYPOINT ["java", "-jar", "/discop-worker-all.jar"]

@@ -1,3 +1,10 @@
+FROM gradle:7-jdk16 as builder
+
+ADD . /src
+WORKDIR /src
+
+RUN ./gradlew :discop-scheduler:shadowJar
+
 FROM openjdk:15
-COPY ./discop-scheduler/build/libs/discop-scheduler-all.jar /discop-scheduler-all.jar
+COPY --from=builder src/discop-scheduler/build/libs/discop-scheduler-all.jar /discop-scheduler-all.jar
 ENTRYPOINT ["java", "-jar", "/discop-scheduler-all.jar"]
