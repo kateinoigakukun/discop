@@ -6,6 +6,7 @@ plugins {
 dependencies {
     implementation 'org.slf4j:slf4j-log4j12:1.7.21'
     implementation project(':discop-core')
+    implementation 'com.google.code.gson:gson:2.8.7'
     testImplementation 'org.junit.jupiter:junit-jupiter:5.7.2'
 }
 

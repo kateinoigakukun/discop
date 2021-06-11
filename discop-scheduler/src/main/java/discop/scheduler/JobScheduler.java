@@ -4,10 +4,7 @@ import discop.protobuf.msg.SchedulerMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -46,6 +43,10 @@ class JobScheduler {
     JobScheduler() {
         this.queue = new LinkedBlockingQueue<>();
         this.executing = new ConcurrentHashMap<>();
+    }
+
+    Collection<JobState> getExecuting() {
+        return executing.values();
     }
 
     synchronized Optional<Completion>
