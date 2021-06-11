@@ -40,7 +40,7 @@ public class Worker implements Callable<SchedulerMessage.JobUnitOutput> {
              Linker linker = new Linker(store);
              Wasi wasi = new Wasi(store, wasiConfig);
              Engine engine = store.engine();
-             Module module = Module.fromBinary(engine, job.getWasmBytes().toByteArray());
+             Module module = Module.fromBinary(engine, job.getWasmBytes().toByteArray())
         ) {
             wasi.addToLinker(linker);
             linker.module(MAIN_MODULE_NAME, module);

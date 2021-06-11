@@ -1,10 +1,7 @@
 package discop.scheduler;
 
-import discop.protobuf.msg.SchedulerMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
 
 public class JobExecutor {
     private final JobScheduler scheduler;
@@ -23,12 +20,7 @@ public class JobExecutor {
                 logger.error("JobScheduler returns unexpected null");
                 return;
             }
-            nodePool.assignJob(job, new NodePool.JobAssigner() {
-                @Override
-                public void assignJobToNode(NodeConnection connection, SchedulerMessage.JobUnit unit) throws IOException {
-                    connection.runJob(unit);
-                }
-            });
+            nodePool.assignJob(job, NodeConnection::runJob);
         }
     }
 }
