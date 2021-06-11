@@ -31,6 +31,7 @@ class Server implements Runnable {
 
     void start() throws IOException {
         var server = new ServerSocket(TransportConfiguration.SCHEDULER_DEFAULT_PORT);
+        logger.info("Listening {} for scheduler server ", server.getLocalSocketAddress());
 
         while (!server.isClosed()) {
             var socket = server.accept();

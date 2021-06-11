@@ -1,0 +1,3 @@
+FROM openjdk:15
+COPY ./discop-scheduler/build/libs/discop-scheduler-all.jar /discop-scheduler-all.jar
+ENTRYPOINT ["java", "-jar", "/discop-scheduler-all.jar"]
