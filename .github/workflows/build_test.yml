@@ -16,8 +16,8 @@ jobs:
       - run: ./gradlew build shadowJar
       - uses: actions/upload-artifact@v2
         with:
-          name: discop-cli-jar
-          path: discop-cli/build/libs/discop-cli-all.jar
+          name: discop-worker-jar
+          path: discop-worker/build/libs/discop-worker-all.jar
       - uses: actions/upload-artifact@v2
         with:
           name: discop-scheduler-jar
