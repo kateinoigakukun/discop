@@ -49,8 +49,7 @@
     };
 
     async function tick() {
-      const endpoint = "http://0.0.0.0:8050"
-      const response = await fetch(`${endpoint}/get_job_status`);
+      const response = await fetch("/get_job_status");
       const json = await response.json();
       updateTable(json);
     }
