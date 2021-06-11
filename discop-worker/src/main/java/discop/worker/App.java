@@ -12,11 +12,10 @@ import java.net.Socket;
 public class App {
 
     static final Logger logger = LoggerFactory.getLogger(App.class);
-    static final Integer apiPort = Integer.parseInt(System.getProperty("discop-worker.api-port", "8080"));
+    static final Integer apiPort = Integer.getInteger("discop-worker.api-port", 8080);
     static final String schedulerAddr = System.getProperty("discop-worker.scheduler-addr", "localhost");
-    static final Integer schedulerPort = Integer.parseInt(
-            System.getProperty("discop-worker.scheduler-port", "8040")
-    );
+    static final Integer schedulerPort = Integer.getInteger("discop-worker.scheduler-port", TransportConfiguration.SCHEDULER_DEFAULT_PORT);
+    static final Integer hostCores = Integer.getInteger("discop-worker.cores", Runtime.getRuntime().availableProcessors());
 
     static void connectionHandshake(Socket socket, int cores) throws IOException {
         var initMessage = SchedulerMessage.NodeSpec.newBuilder()
@@ -27,11 +26,10 @@ public class App {
     }
 
     public static void main(String[] args) throws Exception {
-        int cores = Runtime.getRuntime().availableProcessors();
         var socket = new Socket(schedulerAddr, schedulerPort);
         logger.info("Connecting scheduler {}", socket.getRemoteSocketAddress());
-        connectionHandshake(socket, cores);
-        var dispatcher = new JobDispatcher(socket.getOutputStream(), cores);
+        connectionHandshake(socket, hostCores);
+        var dispatcher = new JobDispatcher(socket.getOutputStream(), hostCores);
         var connection = new SchedulerConnection(socket, dispatcher);
         var clusterJobQueue = new ClusterJobQueue(connection);
         var server = new HttpApiServer(apiPort, clusterJobQueue, connection);
