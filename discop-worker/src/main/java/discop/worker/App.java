@@ -3,12 +3,15 @@ package discop.worker;
 import discop.core.RPC;
 import discop.core.TransportConfiguration;
 import discop.protobuf.msg.SchedulerMessage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.Socket;
 
 public class App {
 
+    static final Logger logger = LoggerFactory.getLogger(App.class);
     static final Integer apiPort = Integer.parseInt(System.getProperty("discop-worker.api-port", "8080"));
     static final String schedulerAddr = System.getProperty("discop-worker.scheduler-addr", "localhost");
     static final Integer schedulerPort = Integer.parseInt(
@@ -26,6 +29,7 @@ public class App {
     public static void main(String[] args) throws Exception {
         int cores = Runtime.getRuntime().availableProcessors();
         var socket = new Socket(schedulerAddr, schedulerPort);
+        logger.info("Connecting scheduler {}", socket.getRemoteSocketAddress());
         connectionHandshake(socket, cores);
         var dispatcher = new JobDispatcher(socket.getOutputStream(), cores);
         var connection = new SchedulerConnection(socket, dispatcher);
