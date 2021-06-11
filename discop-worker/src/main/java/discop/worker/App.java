@@ -28,6 +28,7 @@ public class App {
     public static void main(String[] args) throws Exception {
         var socket = new Socket(schedulerAddr, schedulerPort);
         logger.info("Connecting scheduler {}", socket.getRemoteSocketAddress());
+        logger.info("Configure worker count to be {}", hostCores);
         connectionHandshake(socket, hostCores);
         var dispatcher = new JobDispatcher(socket.getOutputStream(), hostCores);
         var connection = new SchedulerConnection(socket, dispatcher);

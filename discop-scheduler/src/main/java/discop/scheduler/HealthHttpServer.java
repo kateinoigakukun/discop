@@ -12,10 +12,10 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.ResourceBundle;
 import java.util.stream.Collectors;
 
 class HealthHttpServer implements Runnable {
-    private HttpServer server;
     private final Logger logger = LoggerFactory.getLogger(HealthHttpServer.class);
     private final Gson gson = new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create();
     private final int port;
@@ -50,8 +50,10 @@ class HealthHttpServer implements Runnable {
                 }
             };
 
-            server = HttpServer.create(addr, 0);
+            HttpServer server = HttpServer.create(addr, 0);
             server.createContext("/get_job_status", this::handleGetJobStatus)
+                    .getFilters().add(loggerFilter);
+            server.createContext("/index.html", this::handleIndexHtml)
                     .getFilters().add(loggerFilter);
             server.start();
         } catch (IOException e) {
@@ -71,13 +73,23 @@ class HealthHttpServer implements Runnable {
         }
     }
 
+    private void handleIndexHtml(HttpExchange exchange) throws IOException {
+        var headers = exchange.getResponseHeaders();
+        headers.set("Content-Type", "text/html");
+        exchange.sendResponseHeaders(200, 0);
+        var os = exchange.getResponseBody();
+        var indexHtml = getClass().getClassLoader().getResourceAsStream("index.html");
+        assert indexHtml != null;
+        os.write(indexHtml.readAllBytes());
+        os.close();
+    }
+
     private void handleGetJobStatus(HttpExchange exchange) throws IOException {
-        byte[] wasmBytes = exchange.getRequestBody().readAllBytes();
         var headers = exchange.getResponseHeaders();
         headers.set("Content-Type", "application/json");
         exchange.sendResponseHeaders(200, 0);
         var response = scheduler.getExecuting()
-                .stream().map((state) -> new Response(state))
+                .stream().map(Response::new)
                 .collect(Collectors.toList());
         var json = gson.toJson(response);
         var os = exchange.getResponseBody();

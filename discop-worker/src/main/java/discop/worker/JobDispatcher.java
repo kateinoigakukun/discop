@@ -31,16 +31,16 @@ public class JobDispatcher {
                         var future = executorService.submit(worker);
                         futures.add(future);
                     }
-                    var completionBuilder = SchedulerMessage.BulkJobUnitCompletion
-                            .newBuilder();
                     for (var future : futures) {
                         var output = future.get();
+                        var completionBuilder = SchedulerMessage.BulkJobUnitCompletion
+                                .newBuilder();
                         completionBuilder.addOutputs(output);
+                        var completion = completionBuilder.build();
+                        var message = RPC.Message.makeNotification(RPC.NotificationType.NotifyJobCompleted, completion.toByteArray());
+                        RPC.Serialization.serializeMessage(schedulerOutgoing, message);
                         logger.info("Job completed: stdout={}, exitCode={}", output.getStdout(), output.getExitCode());
                     }
-                    var completion = completionBuilder.build();
-                    var message = RPC.Message.makeNotification(RPC.NotificationType.NotifyJobCompleted, completion.toByteArray());
-                    RPC.Serialization.serializeMessage(schedulerOutgoing, message);
                 } catch (Exception e) {
                     logger.error("Exception raised while collecting results of job: {}", e.toString());
                 }
