@@ -34,6 +34,7 @@
     const updateTable = (statusList) => {
       let rows = ""
       for (const status of statusList) {
+        rows += "<tr>";
         rows += `<td>${status.job_id}</td>\n`;
         const rawProgress = 100 * (1 - status.executing_child_jobs / status.child_job_count);
         const progress = Math.round(rawProgress * 10) / 10;
@@ -44,6 +45,7 @@
       <div class="progress-bar" role="progressbar" style="width: ${progress}%;" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100">${progress}%</div>
     </div>
     </td>\n`
+        rows += "</tr>";
       }
       tableBody.innerHTML = rows;
     };

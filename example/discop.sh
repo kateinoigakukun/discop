@@ -1,6 +1,6 @@
 #!/bin/bash
-set -e
-N=100
+set -xe
+N=50
 
 example_dir=$(cd "$(dirname "$0")" && pwd)
 main="$example_dir/main.wasm"

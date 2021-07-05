@@ -14,7 +14,7 @@ struct Request: Codable {
 }
 
 let inputs = (0..<N).map { _ in
-    [14, 13, 0]
+    [13, 9, 0]
 }
 .map {
     JobInput(arguments: ["main.wasm"] + $0.map(\.description))

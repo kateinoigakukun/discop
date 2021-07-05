@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 CC="${CC:-clang}"
-N=100
+N=50
 
 example_dir=$(cd "$(dirname "$0")" && pwd)
 main_c="$example_dir/main.c"
@@ -17,6 +17,6 @@ for i in $(seq 1 $N); do
   if [ $(($i * 100/$N % 2)) -eq 0 ]; then
     printf .
   fi
-  "$main" 14 13 0 > /dev/null
+  "$main" 13 9 0 > /dev/null
 done
 printf "\n"
