@@ -5,6 +5,6 @@ WORKDIR /src
 
 RUN ./gradlew :discop-worker:shadowJar
 
-FROM openjdk:15
+FROM openjdk:16
 COPY --from=builder src/discop-worker/build/libs/discop-worker-all.jar /discop-worker-all.jar
 ENTRYPOINT ["java", "-jar", "/discop-worker-all.jar"]
