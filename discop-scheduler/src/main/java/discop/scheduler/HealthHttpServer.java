@@ -12,6 +12,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.ResourceBundle;
 import java.util.stream.Collectors;
 
@@ -20,10 +22,12 @@ class HealthHttpServer implements Runnable {
     private final Gson gson = new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create();
     private final int port;
     private final JobScheduler scheduler;
+    private final NodePool nodePool;
 
-    HealthHttpServer(JobScheduler scheduler) {
+    HealthHttpServer(JobScheduler scheduler, NodePool nodePool) {
         this.port = TransportConfiguration.SCHEDULER_HEALTH_DEFAULT_PORT;
         this.scheduler = scheduler;
+        this.nodePool = nodePool;
     }
 
     @Override
@@ -61,15 +65,35 @@ class HealthHttpServer implements Runnable {
         }
     }
 
-    static class Response {
+    static class JobResponse {
         final long jobId;
         final int childJobCount;
         final int executingChildJobs;
 
-        Response(JobScheduler.JobState jobState) {
+        JobResponse(JobScheduler.JobState jobState) {
             this.jobId = jobState.unit.getJobId();
             this.childJobCount = jobState.unit.getOriginal().getInputsCount();
             this.executingChildJobs = jobState.executingChildJobs;
+        }
+    }
+
+    static class WorkerResponse {
+        final String name;
+        final int cores;
+
+        public WorkerResponse(NodeConnection connection) {
+            this.name = connection.getSpec().getName();
+            this.cores = connection.getSpec().getCoreCount();
+        }
+    }
+
+    static class Response {
+        final List<JobResponse> jobs;
+        final List<WorkerResponse> workers;
+
+        public Response(List<JobResponse> jobs, List<WorkerResponse> workers) {
+            this.jobs = jobs;
+            this.workers = workers;
         }
     }
 
@@ -88,9 +112,13 @@ class HealthHttpServer implements Runnable {
         var headers = exchange.getResponseHeaders();
         headers.set("Content-Type", "application/json");
         exchange.sendResponseHeaders(200, 0);
-        var response = scheduler.getExecuting()
-                .stream().map(Response::new)
+        var jobResponses = scheduler.getExecuting()
+                .stream().map(JobResponse::new)
                 .collect(Collectors.toList());
+        var workerResponses = nodePool.getAllConnections()
+                .map(WorkerResponse::new)
+                .collect(Collectors.toList());
+        var response = new Response(jobResponses, workerResponses);
         var json = gson.toJson(response);
         var os = exchange.getResponseBody();
         os.write(json.getBytes());

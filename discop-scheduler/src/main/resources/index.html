@@ -14,7 +14,25 @@
 
 <body class="container">
   <h1>Discop Monitor</h1>
+
   <div class="row">
+    <h2>Workers</h2>
+    <div class="col-md-6">
+      <table class="table">
+        <thead>
+        <tr>
+          <th scope="col">Name</th>
+          <th scope="col">Cores</th>
+        </tr>
+        </thead>
+        <tbody id="workers-table-body">
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="row">
+    <h2>Scheduled Jobs</h2>
     <div class="col-md-6">
       <table class="table">
         <thead>
@@ -24,14 +42,16 @@
             <th scope="col">Progress</th>
           </tr>
         </thead>
-        <tbody id="table-body">
+        <tbody id="jobs-table-body">
         </tbody>
       </table>
     </div>
   </div>
-  <script>
-    const tableBody = document.getElementById("table-body");
-    const updateTable = (statusList) => {
+
+    <script>
+    const jobTableBody = document.getElementById("jobs-table-body");
+    const workerTableBody = document.getElementById("workers-table-body");
+    const updateJobTable = (statusList) => {
       let rows = ""
       for (const status of statusList) {
         rows += "<tr>";
@@ -47,13 +67,25 @@
     </td>\n`
         rows += "</tr>";
       }
-      tableBody.innerHTML = rows;
+      jobTableBody.innerHTML = rows;
+    };
+
+    const updateWorkerTable = (statusList) => {
+      let rows = ""
+      for (const status of statusList) {
+        rows += "<tr>";
+        rows += `<td>${status.name}</td>\n`;
+        rows += `<td>${status.cores}</td>\n`
+        rows += "</tr>";
+      }
+      workerTableBody.innerHTML = rows;
     };
 
     async function tick() {
       const response = await fetch("/get_job_status");
       const json = await response.json();
-      updateTable(json);
+      updateJobTable(json.jobs);
+      updateWorkerTable(json.workers);
     }
     let tickToken = null;
     tickToken = setInterval(() => {

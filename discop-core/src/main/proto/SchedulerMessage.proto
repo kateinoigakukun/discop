@@ -4,6 +4,7 @@ option java_package = "discop.protobuf.msg";
 
 message NodeSpec {
     uint32 core_count = 1;
+    string name = 2;
 }
 
 message JobInput {

@@ -8,7 +8,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.PriorityBlockingQueue;
-import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 // Must be thread-safe
 class NodePool {
@@ -24,6 +24,10 @@ class NodePool {
         NodeState(NodeConnection connection) {
             this.connection = connection;
             this.executingJobs = 0;
+        }
+
+        NodeConnection getConnection() {
+            return connection;
         }
 
         int getCoreCount() {
@@ -53,6 +57,10 @@ class NodePool {
 
     NodeConnection getConnection(UUID id) {
         return nodeById.get(id).connection;
+    }
+
+    Stream<NodeConnection> getAllConnections() {
+        return nodeList.stream().map(NodeState::getConnection);
     }
 
     synchronized void completeChildJob(NodeConnection connection) {
