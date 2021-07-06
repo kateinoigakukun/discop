@@ -7,4 +7,5 @@ RUN ./gradlew :discop-scheduler:shadowJar
 
 FROM openjdk:16
 COPY --from=builder src/discop-scheduler/build/libs/discop-scheduler-all.jar /discop-scheduler-all.jar
-ENTRYPOINT ["java", "-jar", "/discop-scheduler-all.jar"]
+ENTRYPOINT ["java"]
+CMD ["-jar", "/discop-scheduler-all.jar"]
