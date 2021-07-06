@@ -1,5 +1,5 @@
 #!/bin/bash
-set -xe
+set -e
 N=50
 
 example_dir=$(cd "$(dirname "$0")" && pwd)
@@ -12,4 +12,4 @@ program_id=$(curl --silent http://localhost:8080/upload_program --data-binary @"
 
 $make_input "$program_id" $N > "$input_file"
 
-curl http://localhost:8080/run_job --data @"$input_file" > /dev/null
+curl --silent http://localhost:8080/run_job --data @"$input_file" > /dev/null
